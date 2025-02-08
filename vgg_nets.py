@@ -57,6 +57,34 @@ class VGG4(network.DeepNetwork):
         '''
         super().__init__(input_feats_shape=input_feats_shape, reg=reg)
 
+        # Conv2D
+        self.conv1 = Conv2D(name="conv1", units=filters, kernel_size=(3, 3), strides=1, activation='relu', wt_scale=wt_scale, 
+                            prev_layer_or_block=None, wt_init=wt_init, do_batch_norm=False)
+        
+        # Conv2D
+        self.conv2 = Conv2D(name="conv2", units=filters, kernel_size=(3, 3), strides=1, activation='relu', wt_scale=wt_scale, 
+                            prev_layer_or_block=self.conv1, wt_init=wt_init, do_batch_norm=False)
+        
+        # MaxPool2D
+        self.pool1 = MaxPool2D(name="maxpool1", pool_size=(2, 2), strides=2,
+                               prev_layer_or_block=self.conv2, padding='VALID')
+
+        # Flatten
+        self.flatten1 = Flatten(name="flat",
+                                prev_layer_or_block=self.pool1)
+
+        # Dense
+        self.dense1 = Dense(name="dense1", units=dense_units, activation='relu', wt_scale=wt_scale, 
+                            prev_layer_or_block=self.flatten1, wt_init=wt_init, do_batch_norm=False, do_layer_norm=False)
+        
+        # Dropout
+        self.dropout1 = Dropout(name="dropout1", rate=0.5,
+                               prev_layer_or_block=self.dense1)
+
+        # Dense
+        self.output_layer = Dense(name="output", units=C, activation='softmax', wt_scale=wt_scale, 
+                                  prev_layer_or_block=self.dropout1, wt_init=wt_init, do_batch_norm=False, do_layer_norm=False)
+
     def __call__(self, x):
         '''Forward pass through the VGG4 network with the data samples `x`.
 
@@ -72,7 +100,13 @@ class VGG4(network.DeepNetwork):
 
         NOTE: Use the functional API to perform the forward pass through your network!
         '''
-        pass
+        x = self.conv1(x)
+        x = self.conv2(x)
+        x = self.pool1(x)
+        x = self.flatten1(x)
+        x = self.dense1(x)
+        x = self.dropout1(x)
+        return self.output_layer(x)
 
 
 class VGG6(network.DeepNetwork):
