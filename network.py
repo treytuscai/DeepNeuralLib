@@ -125,7 +125,10 @@ class DeepNetwork:
         TODO: Starting with the output layer, traverse the net backward, calling the appropriate method to
         set the training mode in each network layer. Model this process around the summary method.
         '''
-        pass
+        layer = self.output_layer
+        while layer is not None:
+            layer.set_mode(is_training)
+            layer = layer.get_prev_layer_or_block()
 
     def init_batchnorm_params(self):
         '''Initializes batch norm related parameters in all layers that are using batch normalization.
@@ -187,7 +190,10 @@ class DeepNetwork:
 
         Hint: tf.where might be helpful.
         '''
-        pass
+        correct_predictions = tf.equal(y_true, y_pred)
+        correct_predictions = tf.cast(correct_predictions, tf.float32)
+        accuracy = tf.reduce_mean(correct_predictions)
+        return accuracy
 
     def predict(self, x, output_layer_net_act=None):
         '''Predicts the class of each data sample in `x` using the passed in `output_layer_net_act`.
@@ -232,8 +238,11 @@ class DeepNetwork:
         do in TensorFlow). Use it!
         '''
 
-        # else:
-            # raise ValueError(f'Unknown loss function {self.loss_name}')
+        if self.loss_name == 'cross_entropy':
+            correct_probs = arange_index(out_net_act, y)
+            loss = -tf.reduce_mean(tf.math.log(correct_probs + eps))
+        else:
+            raise ValueError(f'Unknown loss function {self.loss_name}')
 
         # Keep the following code
         # Handles the regularization for Adam
@@ -282,7 +291,12 @@ class DeepNetwork:
 
         NOTE: Don't forget to record gradients on a gradient tape!
         '''
-        pass
+        with tf.GradientTape() as tape:
+            out_net_act = self(x_batch)
+            loss = self.loss(out_net_act, y_batch)
+        
+        self.update_params(tape, loss)
+        return loss
 
     # @tf.function(jit_compile=True)
     @tf.function
@@ -309,7 +323,11 @@ class DeepNetwork:
 
         NOTE: There should not be any gradient tapes here.
         '''
-        pass
+        out_net_act = self(x_batch)
+        loss = self.loss(out_net_act, y_batch)
+        y_pred = tf.argmax(out_net_act, axis=1, output_type=tf.int32)
+        accuracy = self.accuracy(y_batch, y_pred)
+        return accuracy, loss
 
     def fit(self, x, y, x_val=None, y_val=None, batch_size=128, max_epochs=10000, val_every=1, verbose=True,
             patience=999, lr_patience=999, lr_decay_factor=0.5, lr_max_decays=12):
