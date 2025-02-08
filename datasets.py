@@ -44,8 +44,10 @@ def load_dataset(name):
     if name.lower() == 'cifar10':
         (x, y), (x_test, y_test) = tf.keras.datasets.cifar10.load_data()
         classnames_file = 'data/cifar10.txt'
-    elif name.lower() == 'mnist10':
+    elif name.lower() == 'mnist':
         (x, y), (x_test, y_test) = tf.keras.datasets.mnist.load_data()
+        x = np.expand_dims(x, axis=-1)
+        x_test = np.expand_dims(x_test, axis=-1)
         classnames_file = 'data/mnist.txt'
     else:
         raise ValueError("Supported datasets: 'cifar10', 'mnist'.")
@@ -116,7 +118,16 @@ def train_val_split(x_train, y_train, val_prop=0.1):
     tf.constant. tf.int32s. shape=(N_val,).
         Validation set labels.
     '''
-    pass
+    num_samps = tf.shape(x_train)[0]
+    num_val_samps = tf.cast(tf.round(tf.cast(num_samps, dtype=tf.float32) * val_prop), dtype=tf.int32)
+
+    x_val = x_train[-num_val_samps:]
+    y_val = y_train[-num_val_samps:]
+
+    x_train_new = x_train[:-num_val_samps]
+    y_train_new = y_train[:-num_val_samps]
+
+    return x_train_new, y_train_new, x_val, y_val
 
 
 def get_dataset(name, standardize_ds=True, val_prop=0.1):
@@ -124,4 +135,35 @@ def get_dataset(name, standardize_ds=True, val_prop=0.1):
     set.
 
     Parameters:
- 
+    -----------
+    name: str.
+        Name of the dataset that should be loaded. Support options in Project 1: 'cifar10', 'mnist'.
+    standardize_ds: bool.
+        Should we standardize the dataset?
+    val_prop: float.
+        The proportion of preliminary training samples to reserve for the validation set. If the proportion does not
+        evenly subdivide the initial N, the number of validation set samples should be rounded to the nearest int.
+
+    Returns:
+    --------
+    x_train: tf.constant. tf.float32s. shape=(N_train, I_y, I_x, n_chans).
+        The training set.
+    y_train: tf.constant. tf.int32s.
+        The training set int-coded labels.
+    x_val: tf.constant. tf.float32s. shape=(N_val, I_y, I_x, n_chans).
+        Validation set features.
+    y_val: tf.constant. tf.int32s. shape=(N_val,).
+        Validation set labels.
+    x_test: tf.constant. tf.float32s.
+        The test set.
+    y_test: tf.constant. tf.int32s.
+        The test set int-coded labels.
+    classnames: Python list. strs. len(classnames)=num_unique_classes.
+        The human-readable string names of the classes in the dataset. If there are 10 classes, len(classnames)=10.
+    '''
+    x_train, y_train, x_test, y_test, classnames = load_dataset(name)
+    if standardize_ds:
+        x_train, x_test = standardize(x_train, x_test)
+    x_train, y_train, x_val, y_val = train_val_split(x_train, y_train, val_prop)
+    return x_train, y_train, x_val, y_val, x_test, y_test, classnames
+    
