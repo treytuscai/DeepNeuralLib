@@ -123,4 +123,24 @@ def get_dataset(name, standardize_ds=True, val_prop=0.1):
     standardize_ds: bool.
         Should we standardize the dataset?
     val_prop: float.
-        The proportion of preliminary training samples to reserve
+        The proportion of preliminary training samples to reserve for the validation set. If the proportion does not
+        evenly subdivide the initial N, the number of validation set samples should be rounded to the nearest int.
+
+    Returns:
+    --------
+    x_train: tf.constant. tf.float32s. shape=(N_train, I_y, I_x, n_chans).
+        The training set.
+    y_train: tf.constant. tf.int32s.
+        The training set int-coded labels.
+    x_val: tf.constant. tf.float32s. shape=(N_val, I_y, I_x, n_chans).
+        Validation set features.
+    y_val: tf.constant. tf.int32s. shape=(N_val,).
+        Validation set labels.
+    x_test: tf.constant. tf.float32s.
+        The test set.
+    y_test: tf.constant. tf.int32s.
+        The test set int-coded labels.
+    classnames: Python list. strs. len(classnames)=num_unique_classes.
+        The human-readable string names of the classes in the dataset. If there are 10 classes, len(classnames)=10.
+    '''
+    pass
