@@ -81,7 +81,14 @@ def standardize(x_train, x_test, eps=1e-10):
     tf.constant. tf.float32s. shape=(N_test, I_y, I_x, n_chans).
         Standardized test set features (preliminary).
     '''
-    pass
+    mean = tf.reduce_mean(x_train, (0, 1, 2), keepdims=True)
+    std = tf.math.reduce_std(x_train, (0, 1, 2), keepdims=True)
+
+    x_train_standardized = (x_train - mean) / (std + eps)
+    x_test_standardized = (x_test - mean) / (std + eps)
+
+    return x_train_standardized, x_test_standardized
+
 
 
 def train_val_split(x_train, y_train, val_prop=0.1):
@@ -117,30 +124,4 @@ def get_dataset(name, standardize_ds=True, val_prop=0.1):
     set.
 
     Parameters:
-    -----------
-    name: str.
-        Name of the dataset that should be loaded. Support options in Project 1: 'cifar10', 'mnist'.
-    standardize_ds: bool.
-        Should we standardize the dataset?
-    val_prop: float.
-        The proportion of preliminary training samples to reserve for the validation set. If the proportion does not
-        evenly subdivide the initial N, the number of validation set samples should be rounded to the nearest int.
-
-    Returns:
-    --------
-    x_train: tf.constant. tf.float32s. shape=(N_train, I_y, I_x, n_chans).
-        The training set.
-    y_train: tf.constant. tf.int32s.
-        The training set int-coded labels.
-    x_val: tf.constant. tf.float32s. shape=(N_val, I_y, I_x, n_chans).
-        Validation set features.
-    y_val: tf.constant. tf.int32s. shape=(N_val,).
-        Validation set labels.
-    x_test: tf.constant. tf.float32s.
-        The test set.
-    y_test: tf.constant. tf.int32s.
-        The test set int-coded labels.
-    classnames: Python list. strs. len(classnames)=num_unique_classes.
-        The human-readable string names of the classes in the dataset. If there are 10 classes, len(classnames)=10.
-    '''
-    pass
+ 
