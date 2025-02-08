@@ -41,7 +41,27 @@ def load_dataset(name):
     https://www.tensorflow.org/api_docs/python/tf/keras/datasets/cifar10/load_data
     https://www.tensorflow.org/api_docs/python/tf/keras/datasets/mnist/load_data
     '''
-    pass
+    if name.lower() == 'cifar10':
+        (x, y), (x_test, y_test) = tf.keras.datasets.cifar10.load_data()
+        classnames_file = 'data/cifar10.txt'
+    elif name.lower() == 'mnist10':
+        (x, y), (x_test, y_test) = tf.keras.datasets.mnist.load_data()
+        classnames_file = 'data/mnist.txt'
+    else:
+        raise ValueError("Supported datasets: 'cifar10', 'mnist'.")
+    
+    x, x_test = x.astype('float32') / 255.0, x_test.astype('float32') / 255.0
+
+    y, y_test = tf.convert_to_tensor(y, dtype=tf.int32), tf.convert_to_tensor(y_test, dtype=tf.int32)
+    y, y_test = tf.reshape(y, [-1]), tf.reshape(y_test, [-1])
+
+    try:
+        with open(classnames_file, 'r') as f:
+            classnames = [line.strip() for line in f.readlines()]
+    except FileNotFoundError:
+        raise FileNotFoundError(f"Class names file '{classnames_file}' not found.")
+
+    return x, y, x_test, y_test, classnames
 
 
 def standardize(x_train, x_test, eps=1e-10):
@@ -103,24 +123,4 @@ def get_dataset(name, standardize_ds=True, val_prop=0.1):
     standardize_ds: bool.
         Should we standardize the dataset?
     val_prop: float.
-        The proportion of preliminary training samples to reserve for the validation set. If the proportion does not
-        evenly subdivide the initial N, the number of validation set samples should be rounded to the nearest int.
-
-    Returns:
-    --------
-    x_train: tf.constant. tf.float32s. shape=(N_train, I_y, I_x, n_chans).
-        The training set.
-    y_train: tf.constant. tf.int32s.
-        The training set int-coded labels.
-    x_val: tf.constant. tf.float32s. shape=(N_val, I_y, I_x, n_chans).
-        Validation set features.
-    y_val: tf.constant. tf.int32s. shape=(N_val,).
-        Validation set labels.
-    x_test: tf.constant. tf.float32s.
-        The test set.
-    y_test: tf.constant. tf.int32s.
-        The test set int-coded labels.
-    classnames: Python list. strs. len(classnames)=num_unique_classes.
-        The human-readable string names of the classes in the dataset. If there are 10 classes, len(classnames)=10.
-    '''
-    pass
+        The proportion of preliminary training samples to reserve
