@@ -85,7 +85,7 @@ class Layer:
 
     def has_wts(self):
         '''Does the current layer store weights? By default, we assume it does not (i.e. always return False).'''
-        return self.wts is not None
+        return False
 
     def get_mode(self):
         '''Returns whether the Layer is in a training state.
@@ -197,7 +197,7 @@ class Layer:
 
         if self.output_shape is None:
             self.output_shape = list(net_act.shape)
-            
+
         return net_act
 
         
@@ -393,9 +393,13 @@ class Dense(Layer):
                          do_batch_norm=do_batch_norm,
                          do_layer_norm=do_layer_norm)
 
+        self.units = units
+        self.wt_scale = wt_scale
+        self.wt_init = wt_init
+
     def has_wts(self):
         '''Returns whether the Dense layer has weights. This is always true so always return... :)'''
-        pass
+        return True
 
     def init_params(self, input_shape):
         '''Initializes the Dense layer's weights and biases.
@@ -414,7 +418,15 @@ class Dense(Layer):
         element of input_shape. This may sound silly, but doing this will prevent you from having to modify this method
         later in the semester :)
         '''
-        pass
+        input_size = input_shape[-1]
+        if self.wt_init == 'normal':
+            self.wts = tf.Variable(tf.random.normal([input_size, self.units], stddev=self.wt_scale))
+        elif self.wt_init == 'he':
+            self.wts = tf.Variable(tf.random.normal([input_size, self.units], stddev=tf.sqrt(2. / input_size)))
+        else:
+            raise ValueError(f"Unsupported weight initialization method: {self.wt_init}")
+        
+        self.b = tf.Variable(tf.random.normal([self.units], stddev=self.wt_scale))
 
     def compute_net_input(self, x):
         '''Computes the net input for the current Dense layer.
@@ -432,7 +444,11 @@ class Dense(Layer):
         NOTE: This layer uses lazy initialization. This means that if the wts are currently None when we enter this
         method, we should call `init_params` to initialize the parameters!
         '''
-        pass
+        if self.wts is None:
+            self.init_params(x.shape)
+        
+        return x @ self.wts + self.b
+        
 
     def compute_batch_norm(self, net_in, eps=0.001):
         '''Computes the batch normalization in a manner that is appropriate for Dense layers.
