@@ -25,6 +25,9 @@ class DeepNetwork:
 
         TODO: Set instance variables for the parameters passed into the constructor.
         '''
+        self.input_feats_shape = input_feats_shape
+        self.reg = reg
+
         # Keep these instance vars:
         self.optimizer_name = None
         self.loss_name = None
@@ -72,6 +75,12 @@ class DeepNetwork:
             # raise ValueError(f'Unknown optimizer {optimizer}')
 
         # Do 'fake' forward pass through net to create wts/bias
+        if optimizer == 'adam':
+            self.opt = tf.keras.optimizers.Adam(learning_rate=lr, beta_1=beta_1)
+        else:
+            raise ValueError(f'Unknown optimizer {optimizer}')
+
+
         x_fake = self.get_one_fake_input()
         self(x_fake)
 

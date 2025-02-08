@@ -5,7 +5,7 @@ CS444: Deep Learning
 '''
 import network
 from layers import Conv2D, MaxPool2D, Flatten, Dropout, Dense
-from block import VGGConvBlock, VGGDenseBlock
+#from block import VGGConvBlock, VGGDenseBlock
 
 
 class VGG4(network.DeepNetwork):
