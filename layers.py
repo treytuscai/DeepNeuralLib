@@ -38,6 +38,12 @@ class Layer:
 
         TODO: Make instance variables for each of the constructor parameters
         '''
+        self.layer_name = layer_name
+        self.act_fun_name = activation
+        self.prev_layer_or_block = prev_layer_or_block
+        self.do_batch_norm = do_batch_norm
+        self.batch_norm_momentum = batch_norm_momentum
+        self.do_layer_norm = do_layer_norm
 
         self.wts = None
         self.b = None
@@ -59,34 +65,34 @@ class Layer:
 
     def get_name(self):
         '''Returns the human-readable string name of the current layer.'''
-        pass
+        return self.layer_name
 
     def get_act_fun_name(self):
         '''Returns the activation function string name used in the current layer.'''
-        pass
+        return self.act_fun_name
 
     def get_prev_layer_or_block(self):
         '''Returns a reference to the Layer object that represents the layer below the current one.'''
-        pass
+        return self.prev_layer_or_block
 
     def get_wts(self):
         '''Returns the weights of the current layer'''
-        pass
+        return self.wts
 
     def get_b(self):
         '''Returns the bias of the current layer'''
-        pass
+        return self.b
 
     def has_wts(self):
         '''Does the current layer store weights? By default, we assume it does not (i.e. always return False).'''
-        pass
+        return self.wts is not None
 
     def get_mode(self):
         '''Returns whether the Layer is in a training state.
 
         HINT: Check out the instance variables above...
         '''
-        pass
+        return self.is_training
 
     def set_mode(self, is_training):
         '''Informs the layer whether the neural network is currently training. Used in Dropout and some other layer
@@ -108,7 +114,7 @@ class Layer:
         Use the `assign` method on the instance variable to update the training state.
         This method should be a one-liner.
         '''
-        pass
+        self.is_training.assign(is_training)
 
 
     def init_params(self, input_shape):
@@ -150,8 +156,15 @@ class Layer:
         - Unless instructed otherwise, you may use the activation function implementations provided by the low level
         TensorFlow API here (You already implemented them in CS343 so you have earned it :)
         '''
-        pass
-        # raise ValueError(f'Unknown activation function {self.act_fun_name}')
+
+        if self.act_fun_name == 'relu':
+            return tf.nn.relu(net_in)
+        if self.act_fun_name == 'linear':
+            return net_in
+        elif self.act_fun_name == 'softmax':
+            return tf.nn.softmax(net_in)
+        else:
+            raise ValueError(f'Unknown activation function {self.act_fun_name}')
 
     def __call__(self, x):
         '''Do a forward pass thru the layer with mini-batch `x`.
@@ -179,7 +192,15 @@ class Layer:
         set it to the shape of the layer's activation, represented as a Python list. You can convert something into a
         Python list by calling the `list` function — e.g. `list(blah)`.
         '''
-        pass
+        net_in = self.compute_net_input(x)
+        net_act = self.compute_net_activation(net_in)
+
+        if self.output_shape is None:
+            self.output_shape = list(net_act.shape)
+            
+        return net_act
+
+        
 
     def get_params(self):
         '''Gets a list of all the parameters learned by the layer (wts, bias, etc.).
