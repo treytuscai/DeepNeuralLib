@@ -542,7 +542,18 @@ class DeepNetwork:
         - It may be helpful to think of `recent_val_losses` as a queue: the current loss value always gets inserted
         either at the beginning or end. The oldest value is then always on the other end of the list.
         '''
-        stop = False
+        if len(recent_val_losses) >= patience:
+            recent_val_losses.pop(0)
+        recent_val_losses.append(curr_val_loss)
+
+        for i, val in enumerate(recent_val_losses):
+            if i == 0:
+                continue
+            if recent_val_losses[0] > val:
+                stop = False
+                return recent_val_losses, stop
+        stop = True
+        return recent_val_losses, stop
 
     def update_lr(self, lr_decay_rate):
         '''Adjusts the learning rate used by the optimizer to be a proportion `lr_decay_rate` of the current learning
