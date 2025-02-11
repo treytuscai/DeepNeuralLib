@@ -9,9 +9,11 @@ import tensorflow as tf
 
 from tf_util import arange_index
 
+
 class DeepNetwork:
     '''The DeepNetwork class is the parent class for specific networks (e.g. VGG).
     '''
+
     def __init__(self, input_feats_shape, reg=0):
         '''DeepNetwork constructor.
 
@@ -70,16 +72,16 @@ class DeepNetwork:
         self.optimizer_name = optimizer
 
         # Initialize optimizer
-        #TODO: Fill this section in
+        # TODO: Fill this section in
 
             # raise ValueError(f'Unknown optimizer {optimizer}')
 
         # Do 'fake' forward pass through net to create wts/bias
         if optimizer == 'adam':
-            self.opt = tf.keras.optimizers.Adam(learning_rate=lr, beta_1=beta_1)
+            self.opt = tf.keras.optimizers.Adam(
+                learning_rate=lr, beta_1=beta_1)
         else:
             raise ValueError(f'Unknown optimizer {optimizer}')
-
 
         x_fake = self.get_one_fake_input()
         self(x_fake)
@@ -248,7 +250,8 @@ class DeepNetwork:
         # Handles the regularization for Adam
         if self.optimizer_name.lower() == 'adam':
             all_net_wts = self.get_all_params(wts_only=True)
-            reg_term = self.reg*0.5*tf.reduce_sum([tf.reduce_sum(wts**2) for wts in all_net_wts])
+            reg_term = self.reg*0.5 * \
+                tf.reduce_sum([tf.reduce_sum(wts**2) for wts in all_net_wts])
             loss = loss + reg_term
 
         return loss
@@ -294,7 +297,7 @@ class DeepNetwork:
         with tf.GradientTape() as tape:
             out_net_act = self(x_batch)
             loss = self.loss(out_net_act, y_batch)
-        
+
         self.update_params(tape, loss)
         return loss
 
@@ -403,6 +406,18 @@ class DeepNetwork:
         - `evaluate` kicks all the network layers out of training mode (as is required bc it is doing prediction).
         Be sure to bring the network layers back into training mode after you are doing computing val acc+loss.
         '''
+        N, Iy, Ix, n_chans = x.shape
+        M = Iy*Ix*n_chans
+        C = tf.maximum(y)
+
+        # set all layers to training mode
+
+        # now start training loop
+
+        for epoch in range(max_epochs):
+
+            mini_bath = np.random.choice(np.arange((batch_size,))
+
         print(f'Finished training after {e} epochs!')
         return train_loss_hist, val_loss_hist, val_acc_hist, e
 
@@ -435,23 +450,23 @@ class DeepNetwork:
         self.set_layer_training_mode(is_training=False)
 
         # Make sure the mini-batch size isn't larger than the number of available samples
-        N = len(x)
+        N=len(x)
         if batch_sz > N:
-            batch_sz = N
+            batch_sz=N
 
-        num_batches = N // batch_sz
+        num_batches=N // batch_sz
 
         # Make sure the mini-batch size is positive...
         if num_batches < 1:
-            num_batches = 1
+            num_batches=1
 
         # Process the dataset in mini-batches by the network, evaluating and avging the acc and loss across batches.
-        loss = acc = 0
+        loss=acc=0
         for b in range(num_batches):
-            curr_x = x[b*batch_sz:(b+1)*batch_sz]
-            curr_y = y[b*batch_sz:(b+1)*batch_sz]
+            curr_x=x[b*batch_sz:(b+1)*batch_sz]
+            curr_y=y[b*batch_sz:(b+1)*batch_sz]
 
-            curr_acc, curr_loss = self.test_step(curr_x, curr_y)
+            curr_acc, curr_loss=self.test_step(curr_x, curr_y)
             acc += curr_acc
             loss += curr_loss
         acc /= num_batches
@@ -504,7 +519,7 @@ class DeepNetwork:
         - It may be helpful to think of `recent_val_losses` as a queue: the current loss value always gets inserted
         either at the beginning or end. The oldest value is then always on the other end of the list.
         '''
-        stop = False
+        stop=False
 
     def update_lr(self, lr_decay_rate):
         '''Adjusts the learning rate used by the optimizer to be a proportion `lr_decay_rate` of the current learning
