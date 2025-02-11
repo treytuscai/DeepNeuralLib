@@ -74,7 +74,7 @@ class DeepNetwork:
         # Initialize optimizer
         # TODO: Fill this section in
 
-            # raise ValueError(f'Unknown optimizer {optimizer}')
+        # raise ValueError(f'Unknown optimizer {optimizer}')
 
         # Do 'fake' forward pass through net to create wts/bias
         if optimizer == 'adam':
@@ -411,12 +411,35 @@ class DeepNetwork:
         C = tf.maximum(y)
 
         # set all layers to training mode
+        set_layer_training_mode(True)
+
+        train_loss_hist = []
+        val_loss_hist = []
+        val_acc_hist = []
 
         # now start training loop
+        for e in range(max_epochs):
+            start_time = time.time_ns()
+            batch_losses = []
+            # make batches
+            for batch in batches:
+                cur_loss = self.train_step(x_batch, y_batch)
+                batch_losses.append(cur_loss)
+            train_loss_hist.append(mean(batch_losses))
 
-        for epoch in range(max_epochs):
+            if e % val_every == 0:
+                # check acc/loss on val set
+                acc, loss = self.evaluate(x_val, y_val)
+                val_loss_hist.append(loss)
+                val_acc_hist.append(acc)
+                print(f"accuracy: {acc}\nloss: {loss}")
 
-            mini_bath = np.random.choice(np.arange((batch_size,))
+                # put all layers back into training mode
+                self.set_layer_training_mode(True)
+
+            # regardless of epoch print epoch number and time elapsed
+            print(
+                f"the epoch {e} took {time.time_ns() - start_time} nanoseconds")
 
         print(f'Finished training after {e} epochs!')
         return train_loss_hist, val_loss_hist, val_acc_hist, e
@@ -450,23 +473,23 @@ class DeepNetwork:
         self.set_layer_training_mode(is_training=False)
 
         # Make sure the mini-batch size isn't larger than the number of available samples
-        N=len(x)
+        N = len(x)
         if batch_sz > N:
-            batch_sz=N
+            batch_sz = N
 
-        num_batches=N // batch_sz
+        num_batches = N // batch_sz
 
         # Make sure the mini-batch size is positive...
         if num_batches < 1:
-            num_batches=1
+            num_batches = 1
 
         # Process the dataset in mini-batches by the network, evaluating and avging the acc and loss across batches.
-        loss=acc=0
+        loss = acc = 0
         for b in range(num_batches):
-            curr_x=x[b*batch_sz:(b+1)*batch_sz]
-            curr_y=y[b*batch_sz:(b+1)*batch_sz]
+            curr_x = x[b*batch_sz:(b+1)*batch_sz]
+            curr_y = y[b*batch_sz:(b+1)*batch_sz]
 
-            curr_acc, curr_loss=self.test_step(curr_x, curr_y)
+            curr_acc, curr_loss = self.test_step(curr_x, curr_y)
             acc += curr_acc
             loss += curr_loss
         acc /= num_batches
@@ -519,7 +542,7 @@ class DeepNetwork:
         - It may be helpful to think of `recent_val_losses` as a queue: the current loss value always gets inserted
         either at the beginning or end. The oldest value is then always on the other end of the list.
         '''
-        stop=False
+        stop = False
 
     def update_lr(self, lr_decay_rate):
         '''Adjusts the learning rate used by the optimizer to be a proportion `lr_decay_rate` of the current learning
