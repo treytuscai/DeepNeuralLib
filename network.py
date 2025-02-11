@@ -211,7 +211,11 @@ class DeepNetwork:
         tf.constant. tf.ints32. shape=(B,).
             int-coded predicted class for each sample in the mini-batch.
         '''
-        pass
+
+        if output_layer_net_act == None:
+            output_layer_net_act = self(x)
+        predicted_classes = tf.argmax(output_layer_net_act, axis=1)
+        return predicted_classes
 
     def loss(self, out_net_act, y, eps=1e-16):
         '''Computes the loss for the current minibatch based on the output layer activations `out_net_act` and int-coded
@@ -429,10 +433,16 @@ class DeepNetwork:
 
             if e % val_every == 0:
                 # check acc/loss on val set
-                acc, loss = self.evaluate(x_val, y_val)
-                val_loss_hist.append(loss)
-                val_acc_hist.append(acc)
-                print(f"accuracy: {acc}\nloss: {loss}")
+                val_acc, val_loss = self.evaluate(x_val, y_val)
+                if len(val_loss_hist) < (patience-1):
+                    recent_loss_hist = val_loss_hist
+                else:
+                    recent_loss_hist = val_loss_hist[-patience:]
+
+                self.early_stopping(recent_loss_hist, val_loss)
+                val_acc_hist.append(val_acc)
+                print(
+                    f"validation accuracy: {val_acc}\nvalidation loss: {val_loss}")
 
                 # put all layers back into training mode
                 self.set_layer_training_mode(True)
