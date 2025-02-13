@@ -9,9 +9,11 @@ import tensorflow as tf
 
 from tf_util import arange_index
 
+
 class DeepNetwork:
     '''The DeepNetwork class is the parent class for specific networks (e.g. VGG).
     '''
+
     def __init__(self, input_feats_shape, reg=0):
         '''DeepNetwork constructor.
 
@@ -70,16 +72,16 @@ class DeepNetwork:
         self.optimizer_name = optimizer
 
         # Initialize optimizer
-        #TODO: Fill this section in
+        # TODO: Fill this section in
 
-            # raise ValueError(f'Unknown optimizer {optimizer}')
+        # raise ValueError(f'Unknown optimizer {optimizer}')
 
         # Do 'fake' forward pass through net to create wts/bias
         if optimizer == 'adam':
-            self.opt = tf.keras.optimizers.Adam(learning_rate=lr, beta_1=beta_1)
+            self.opt = tf.keras.optimizers.Adam(
+                learning_rate=lr, beta_1=beta_1)
         else:
             raise ValueError(f'Unknown optimizer {optimizer}')
-
 
         x_fake = self.get_one_fake_input()
         self(x_fake)
@@ -209,7 +211,11 @@ class DeepNetwork:
         tf.constant. tf.ints32. shape=(B,).
             int-coded predicted class for each sample in the mini-batch.
         '''
-        pass
+
+        if output_layer_net_act == None:
+            output_layer_net_act = self(x)
+        predicted_classes = tf.argmax(output_layer_net_act, axis=1)
+        return predicted_classes
 
     def loss(self, out_net_act, y, eps=1e-16):
         '''Computes the loss for the current minibatch based on the output layer activations `out_net_act` and int-coded
@@ -248,7 +254,8 @@ class DeepNetwork:
         # Handles the regularization for Adam
         if self.optimizer_name.lower() == 'adam':
             all_net_wts = self.get_all_params(wts_only=True)
-            reg_term = self.reg*0.5*tf.reduce_sum([tf.reduce_sum(wts**2) for wts in all_net_wts])
+            reg_term = self.reg*0.5 * \
+                tf.reduce_sum([tf.reduce_sum(wts**2) for wts in all_net_wts])
             loss = loss + reg_term
 
         return loss
@@ -294,7 +301,7 @@ class DeepNetwork:
         with tf.GradientTape() as tape:
             out_net_act = self(x_batch)
             loss = self.loss(out_net_act, y_batch)
-        
+
         self.update_params(tape, loss)
         return loss
 
@@ -403,7 +410,71 @@ class DeepNetwork:
         - `evaluate` kicks all the network layers out of training mode (as is required bc it is doing prediction).
         Be sure to bring the network layers back into training mode after you are doing computing val acc+loss.
         '''
-        print(f'Finished training after {e} epochs!')
+        N, Iy, Ix, n_chans = x.shape
+        M = Iy*Ix*n_chans
+        num_batch_iters = int(np.ceil(N/batch_size))
+
+        # set all layers to training mode
+        self.set_layer_training_mode(True)
+
+        train_loss_hist = []
+        val_loss_hist = []
+        val_acc_hist = []
+
+        # rng for batches
+        rng = np.random.default_rng(seed=12)
+
+        # now start training loop
+        for e in range(max_epochs):
+            start_time = time.time_ns()
+            batch_losses = []
+            # make batches
+
+            for batch_num in range(num_batch_iters):
+                # Generate mini-batch indices
+                indices = rng.choice(
+                    N, size=(batch_size,), replace=True)
+                indices = tf.convert_to_tensor(indices, dtype=tf.int32)
+
+                # select batch
+                x_batch = tf.gather(x, indices)
+                y_batch = tf.gather(y, indices)
+
+                # run training step with batch
+                cur_loss = self.train_step(x_batch, y_batch)
+                batch_losses.append(cur_loss)
+                train_loss = sum(batch_losses)/len(batch_losses)
+            train_loss_hist.append(train_loss.numpy())
+
+            if e % val_every == 0 and x_val != None and y_val != None:
+                # check acc/loss on val set
+                val_acc, val_loss = self.evaluate(x_val, y_val)
+
+                # EARLY STOPPING BLOCK
+                # if len(val_loss_hist) < (patience-1):
+                #     recent_loss_hist = val_loss_hist
+                # else:
+                #     recent_loss_hist = val_loss_hist[-patience:]
+
+                # recent_loss_hist, stop = self.early_stopping(
+                #     recent_loss_hist, val_loss, patience)
+                # if not stop:
+                #     print(
+                #         f'early stopping initiated. Val loss hist: {recent_loss_hist}')
+                #     break
+                val_acc_hist.append(val_acc.numpy())
+                val_loss_hist.append(val_loss.numpy())
+                print(
+                    f"validation accuracy: {val_acc}\nvalidation loss: {val_loss}")
+
+                # put all layers back into training mode
+                self.set_layer_training_mode(True)
+
+            # regardless of epoch print epoch number and time elapsed
+            print(
+                f"the epoch {e} took {time.time_ns() - start_time} nanoseconds")
+
+        print(f'Finished training after {e+1} epochs!')
         return train_loss_hist, val_loss_hist, val_acc_hist, e
 
     def evaluate(self, x, y, batch_sz=64):
@@ -504,7 +575,18 @@ class DeepNetwork:
         - It may be helpful to think of `recent_val_losses` as a queue: the current loss value always gets inserted
         either at the beginning or end. The oldest value is then always on the other end of the list.
         '''
-        stop = False
+        if len(recent_val_losses) >= patience:
+            recent_val_losses.pop(0)
+        recent_val_losses.append(curr_val_loss)
+
+        for i, val in enumerate(recent_val_losses):
+            if i == 0:
+                continue
+            if recent_val_losses[0] > val:
+                stop = False
+                return recent_val_losses, stop
+        stop = True
+        return recent_val_losses, stop
 
     def update_lr(self, lr_decay_rate):
         '''Adjusts the learning rate used by the optimizer to be a proportion `lr_decay_rate` of the current learning

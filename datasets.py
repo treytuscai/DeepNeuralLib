@@ -51,17 +51,19 @@ def load_dataset(name):
         classnames_file = 'data/mnist.txt'
     else:
         raise ValueError("Supported datasets: 'cifar10', 'mnist'.")
-    
+
     x, x_test = x.astype('float32') / 255.0, x_test.astype('float32') / 255.0
 
-    y, y_test = tf.convert_to_tensor(y, dtype=tf.int32), tf.convert_to_tensor(y_test, dtype=tf.int32)
+    y, y_test = tf.convert_to_tensor(
+        y, dtype=tf.int32), tf.convert_to_tensor(y_test, dtype=tf.int32)
     y, y_test = tf.reshape(y, [-1]), tf.reshape(y_test, [-1])
 
     try:
         with open(classnames_file, 'r') as f:
             classnames = [line.strip() for line in f.readlines()]
     except FileNotFoundError:
-        raise FileNotFoundError(f"Class names file '{classnames_file}' not found.")
+        raise FileNotFoundError(
+            f"Class names file '{classnames_file}' not found.")
 
     return x, y, x_test, y_test, classnames
 
@@ -92,7 +94,6 @@ def standardize(x_train, x_test, eps=1e-10):
     return x_train_standardized, x_test_standardized
 
 
-
 def train_val_split(x_train, y_train, val_prop=0.1):
     '''Subdivides the preliminary training set into disjoint/non-overlapping training set and validation sets.
     The val set is taken from the end of the preliminary training set.
@@ -119,7 +120,8 @@ def train_val_split(x_train, y_train, val_prop=0.1):
         Validation set labels.
     '''
     num_samps = tf.shape(x_train)[0]
-    num_val_samps = tf.cast(tf.round(tf.cast(num_samps, dtype=tf.float32) * val_prop), dtype=tf.int32)
+    num_val_samps = tf.cast(
+        tf.round(tf.cast(num_samps, dtype=tf.float32) * val_prop), dtype=tf.int32)
 
     x_val = x_train[-num_val_samps:]
     y_val = y_train[-num_val_samps:]
@@ -164,6 +166,6 @@ def get_dataset(name, standardize_ds=True, val_prop=0.1):
     x_train, y_train, x_test, y_test, classnames = load_dataset(name)
     if standardize_ds:
         x_train, x_test = standardize(x_train, x_test)
-    x_train, y_train, x_val, y_val = train_val_split(x_train, y_train, val_prop)
+    x_train, y_train, x_val, y_val = train_val_split(
+        x_train, y_train, val_prop)
     return x_train, y_train, x_val, y_val, x_test, y_test, classnames
-    
