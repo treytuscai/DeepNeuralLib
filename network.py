@@ -443,7 +443,8 @@ class DeepNetwork:
                 # run training step with batch
                 cur_loss = self.train_step(x_batch, y_batch)
                 batch_losses.append(cur_loss)
-            train_loss_hist.append(sum(batch_losses)/len(batch_losses))
+                train_loss = sum(batch_losses)/len(batch_losses)
+            train_loss_hist.append(train_loss.numpy())
 
             if e % val_every == 0 and x_val != None and y_val != None:
                 # check acc/loss on val set
@@ -461,7 +462,8 @@ class DeepNetwork:
                 #     print(
                 #         f'early stopping initiated. Val loss hist: {recent_loss_hist}')
                 #     break
-                val_acc_hist.append(val_acc)
+                val_acc_hist.append(val_acc.numpy())
+                val_loss_hist.append(val_loss.numpy())
                 print(
                     f"validation accuracy: {val_acc}\nvalidation loss: {val_loss}")
 
@@ -472,7 +474,7 @@ class DeepNetwork:
             print(
                 f"the epoch {e} took {time.time_ns() - start_time} nanoseconds")
 
-        print(f'Finished training after {e} epochs!')
+        print(f'Finished training after {e+1} epochs!')
         return train_loss_hist, val_loss_hist, val_acc_hist, e
 
     def evaluate(self, x, y, batch_sz=64):
