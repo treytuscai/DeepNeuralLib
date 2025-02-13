@@ -448,12 +448,19 @@ class DeepNetwork:
             if e % val_every == 0 and x_val != None and y_val != None:
                 # check acc/loss on val set
                 val_acc, val_loss = self.evaluate(x_val, y_val)
-                if len(val_loss_hist) < (patience-1):
-                    recent_loss_hist = val_loss_hist
-                else:
-                    recent_loss_hist = val_loss_hist[-patience:]
 
-                self.early_stopping(recent_loss_hist, val_loss)
+                # EARLY STOPPING BLOCK
+                # if len(val_loss_hist) < (patience-1):
+                #     recent_loss_hist = val_loss_hist
+                # else:
+                #     recent_loss_hist = val_loss_hist[-patience:]
+
+                # recent_loss_hist, stop = self.early_stopping(
+                #     recent_loss_hist, val_loss, patience)
+                # if not stop:
+                #     print(
+                #         f'early stopping initiated. Val loss hist: {recent_loss_hist}')
+                #     break
                 val_acc_hist.append(val_acc)
                 print(
                     f"validation accuracy: {val_acc}\nvalidation loss: {val_loss}")
