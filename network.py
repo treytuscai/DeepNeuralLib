@@ -412,26 +412,40 @@ class DeepNetwork:
         '''
         N, Iy, Ix, n_chans = x.shape
         M = Iy*Ix*n_chans
-        C = tf.maximum(y)
+        num_batch_iters = int(np.ceil(N/batch_size))
 
         # set all layers to training mode
-        set_layer_training_mode(True)
+        self.set_layer_training_mode(True)
 
         train_loss_hist = []
         val_loss_hist = []
         val_acc_hist = []
+
+        # rng for batches
+        rng = np.random.default_rng(seed=12)
 
         # now start training loop
         for e in range(max_epochs):
             start_time = time.time_ns()
             batch_losses = []
             # make batches
-            for batch in batches:
+
+            for batch_num in range(num_batch_iters):
+                # Generate mini-batch indices
+                indices = rng.choice(
+                    N, size=(batch_size,), replace=True)
+                indices = tf.convert_to_tensor(indices, dtype=tf.int32)
+
+                # select batch
+                x_batch = tf.gather(x, indices)
+                y_batch = tf.gather(y, indices)
+
+                # run training step with batch
                 cur_loss = self.train_step(x_batch, y_batch)
                 batch_losses.append(cur_loss)
-            train_loss_hist.append(mean(batch_losses))
+            train_loss_hist.append(sum(batch_losses)/len(batch_losses))
 
-            if e % val_every == 0:
+            if e % val_every == 0 and x_val != None and y_val != None:
                 # check acc/loss on val set
                 val_acc, val_loss = self.evaluate(x_val, y_val)
                 if len(val_loss_hist) < (patience-1):
