@@ -5,7 +5,7 @@ CS444: Deep Learning
 '''
 import network
 from layers import Conv2D, MaxPool2D, Flatten, Dropout, Dense
-#from block import VGGConvBlock, VGGDenseBlock
+from block import VGGConvBlock, VGGDenseBlock
 
 
 class VGG4(network.DeepNetwork):
@@ -145,7 +145,20 @@ class VGG6(network.DeepNetwork):
         objects here! The number of lines of code should be comparable or perhaps a little less than VGG4
         (thanks to blocks!).
         '''
-        pass
+        super().__init__(input_feats_shape=input_feats_shape, reg=reg)
+
+        # Conv2D Blocks
+        self.conv_block_1 = VGGConvBlock(blockname="ConvBlock1", units=filters[0], prev_layer_or_block=None, wt_scale=wt_scale, wt_init=wt_init)
+        self.conv_block_2 = VGGConvBlock(blockname="ConvBlock2", units=filters[1], prev_layer_or_block=self.conv_block_1, wt_scale=wt_scale, wt_init=wt_init)
+
+        # Flatten Layer
+        self.flatten = self.flatten1 = Flatten(name="flat", prev_layer_or_block=self.conv_block_2)
+
+        # Dense Block
+        self.dense_block = VGGDenseBlock(blockname="DenseBlock1", units=dense_units, prev_layer_or_block=self.flatten, num_dense_blocks=1, wt_scale=wt_scale, wt_init=wt_init)
+
+        # Output Layer
+        self.output_layer = Dense(name="output_layer", units=C, activation='softmax', wt_scale=wt_scale, prev_layer_or_block=self.dense_block, wt_init=wt_init)
 
     def __call__(self, x):
         '''Forward pass through the VGG6 network with the data samples `x`.
@@ -162,7 +175,12 @@ class VGG6(network.DeepNetwork):
 
         NOTE: Use the functional API to perform the forward pass through your network!
         '''
-        pass
+        x = self.conv_block_1(x)
+        x = self.conv_block_2(x)
+        x = self.flatten(x)  # Flatten before passing to dense layers
+        x = self.dense_block(x)
+        x = self.output_layer(x)
+        return x
 
 
 class VGG8(network.DeepNetwork):

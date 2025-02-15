@@ -29,7 +29,9 @@ class Block:
         work as expected. This list will store a reference to all specific layers that belong to the block. This is
         handled by specific blocks (i.e. child classes of this class) so it should remain empty here.
         '''
-        pass
+        self.layers = []
+        self.blockname = blockname
+        self.prev_layer_or_block = prev_layer_or_block
 
     def get_prev_layer_or_block(self):
         '''Returns a reference to the Layer object that represents the layer/block below the current one.
@@ -171,6 +173,20 @@ class VGGConvBlock(Block):
         '''
         super().__init__(blockname, prev_layer_or_block=prev_layer_or_block)
 
+        # Conv2D Layers
+        for i in range(num_conv_layers):
+            conv_layer = Conv2D(name=f"{blockname}/conv_{i}", units=units, kernel_size=(3, 3), wt_scale=wt_scale, wt_init=wt_init, do_batch_norm=do_batch_norm)
+            self.layers.append(conv_layer)
+
+        # MaxPool2D Layer
+        pool_layer = MaxPool2D(name=f"{blockname}/maxpool2", pool_size=pool_size, strides=2)
+        self.layers.append(pool_layer)
+
+        # Optional Dropout Layer
+        if dropout:
+            dropout_layer = Dropout(name=f"{blockname}/dropout", rate=dropout_rate)
+            self.layers.append(dropout_layer)
+
     def __call__(self, x):
         '''Forward pass through the block the data samples `x`.
 
@@ -190,7 +206,9 @@ class VGGConvBlock(Block):
         1. Use the functional API to perform the forward pass through your network!
         2. There is an elegant/short way to forward thru the block involving self.layers... ;)
         '''
-        pass
+        for layer in self.layers:
+            x = layer(x)
+        return x
 
 
 class VGGDenseBlock(Block):
@@ -245,7 +263,16 @@ class VGGDenseBlock(Block):
         and 'VGGBlock_0/dense_1'. This will help making sense of the summary print outs when the net is compiled.
 
         '''
-        pass
+        super().__init__(blockname, prev_layer_or_block=prev_layer_or_block)
+
+        # Dense Layers
+        for i in range(num_dense_blocks):
+            dense_layer = Dense(name=f"{blockname}/dense_{i}", units=units[i], wt_scale=wt_scale,  wt_init=wt_init, do_batch_norm=do_batch_norm)
+            # Optional Dropout Layer
+            self.layers.append(dense_layer)
+            if dropout:
+                dropout_layer = Dropout(name=f"{blockname}/dropout", rate=dropout_rate)
+                self.layers.append(dropout_layer)
 
     def __call__(self, x):
         '''Forward pass through the block the data samples `x`.
@@ -264,4 +291,6 @@ class VGGDenseBlock(Block):
         1. Use the functional API to perform the forward pass through your network!
         2. There is an elegant/short way to forward thru the block involving self.layers... ;)
         '''
-        pass
+        for layer in self.layers:
+            x = layer(x)
+        return x

@@ -276,8 +276,8 @@ class DeepNetwork:
         grads = tape.gradient(loss, self.all_net_params)
         self.opt.apply_gradients(zip(grads, self.all_net_params))
 
-    # @tf.function(jit_compile=True)
-    @tf.function
+    @tf.function(jit_compile=True)
+    #@tf.function
     def train_step(self, x_batch, y_batch):
         '''Completely process a single mini-batch of data during training. This includes:
         1. Performing a forward pass of the data through the entire network.
@@ -305,8 +305,8 @@ class DeepNetwork:
         self.update_params(tape, loss)
         return loss
 
-    # @tf.function(jit_compile=True)
-    @tf.function
+    @tf.function(jit_compile=True)
+    #@tf.function
     def test_step(self, x_batch, y_batch):
         '''Completely process a single mini-batch of data during test/validation time. This includes:
         1. Performing a forward pass of the data through the entire network.
