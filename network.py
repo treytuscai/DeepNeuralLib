@@ -417,6 +417,7 @@ class DeepNetwork:
         self.set_layer_training_mode(True)
 
         train_loss_hist, val_loss_hist, val_acc_hist = [], [], []
+        recent_val_losses = []
 
         # Initialize random number generator
         rng = np.random.default_rng(seed=12)
@@ -443,25 +444,17 @@ class DeepNetwork:
 
             if e % val_every == 0 and x_val is not None and y_val is not None:
                 val_acc, val_loss = self.evaluate(x_val, y_val)
-
-                # EARLY STOPPING BLOCK
-                # if len(val_loss_hist) < (patience-1):
-                #     recent_loss_hist = val_loss_hist
-                # else:
-                #     recent_loss_hist = val_loss_hist[-patience:]
-
-                # recent_loss_hist, stop = self.early_stopping(
-                #     recent_loss_hist, val_loss, patience)
-                # if not stop:
-                #     print(
-                #         f'early stopping initiated. Val loss hist: {recent_loss_hist}')
-                #     break
-
                 val_acc_hist.append(val_acc.numpy())
                 val_loss_hist.append(val_loss.numpy())
+
+                recent_val_losses, stop_training = self.early_stopping(recent_val_losses, val_loss, patience)
                 
                 if verbose:
                     print(f"Epoch {e+1}: Training Loss = {train_loss:.4f}, Validation Loss = {val_loss:.4f}, Validation Accuracy = {val_acc:.4f}")
+                
+                if stop_training:
+                    print(f"Early stopping triggered at epoch {e+1}")
+                    break
 
                 # Set layers back to training mode
                 self.set_layer_training_mode(True)
