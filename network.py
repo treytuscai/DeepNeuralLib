@@ -276,8 +276,8 @@ class DeepNetwork:
         grads = tape.gradient(loss, self.all_net_params)
         self.opt.apply_gradients(zip(grads, self.all_net_params))
 
-    @tf.function(jit_compile=True)
-    #@tf.function
+    #@tf.function(jit_compile=True)
+    @tf.function
     def train_step(self, x_batch, y_batch):
         '''Completely process a single mini-batch of data during training. This includes:
         1. Performing a forward pass of the data through the entire network.
@@ -305,8 +305,8 @@ class DeepNetwork:
         self.update_params(tape, loss)
         return loss
 
-    @tf.function(jit_compile=True)
-    #@tf.function
+    #@tf.function(jit_compile=True)
+    @tf.function
     def test_step(self, x_batch, y_batch):
         '''Completely process a single mini-batch of data during test/validation time. This includes:
         1. Performing a forward pass of the data through the entire network.
@@ -410,44 +410,38 @@ class DeepNetwork:
         - `evaluate` kicks all the network layers out of training mode (as is required bc it is doing prediction).
         Be sure to bring the network layers back into training mode after you are doing computing val acc+loss.
         '''
-        N, Iy, Ix, n_chans = x.shape
-        M = Iy*Ix*n_chans
-        num_batch_iters = int(np.ceil(N/batch_size))
+        N = x.shape[0]
+        num_batch_iters = int(np.ceil(N / batch_size))
 
-        # set all layers to training mode
+        # Set all layers to training mode
         self.set_layer_training_mode(True)
 
-        train_loss_hist = []
-        val_loss_hist = []
-        val_acc_hist = []
+        train_loss_hist, val_loss_hist, val_acc_hist = [], [], []
 
-        # rng for batches
+        # Initialize random number generator
         rng = np.random.default_rng(seed=12)
 
-        # now start training loop
         for e in range(max_epochs):
-            start_time = time.time_ns()
+            start_time = time.time()
             batch_losses = []
-            # make batches
 
-            for batch_num in range(num_batch_iters):
+            for _ in range(num_batch_iters):
                 # Generate mini-batch indices
-                indices = rng.choice(
-                    N, size=(batch_size,), replace=True)
-                indices = tf.convert_to_tensor(indices, dtype=tf.int32)
+                indices = tf.convert_to_tensor(
+                    rng.choice(N, size=(batch_size,), replace=True), dtype=tf.int32
+                )
 
-                # select batch
-                x_batch = tf.gather(x, indices)
-                y_batch = tf.gather(y, indices)
+                # Select batch
+                x_batch, y_batch = tf.gather(x, indices), tf.gather(y, indices)
 
-                # run training step with batch
+                # Run training step
                 cur_loss = self.train_step(x_batch, y_batch)
                 batch_losses.append(cur_loss)
-                train_loss = sum(batch_losses)/len(batch_losses)
+
+            train_loss = sum(batch_losses)/len(batch_losses)
             train_loss_hist.append(train_loss.numpy())
 
-            if e % val_every == 0 and x_val != None and y_val != None:
-                # check acc/loss on val set
+            if e % val_every == 0 and x_val is not None and y_val is not None:
                 val_acc, val_loss = self.evaluate(x_val, y_val)
 
                 # EARLY STOPPING BLOCK
@@ -462,20 +456,22 @@ class DeepNetwork:
                 #     print(
                 #         f'early stopping initiated. Val loss hist: {recent_loss_hist}')
                 #     break
+
                 val_acc_hist.append(val_acc.numpy())
                 val_loss_hist.append(val_loss.numpy())
-                print(
-                    f"validation accuracy: {val_acc}\nvalidation loss: {val_loss}")
+                
+                if verbose:
+                    print(f"Epoch {e+1}: Training Loss = {train_loss:.4f}, Validation Loss = {val_loss:.4f}, Validation Accuracy = {val_acc:.4f}")
 
-                # put all layers back into training mode
+                # Set layers back to training mode
                 self.set_layer_training_mode(True)
 
-            # regardless of epoch print epoch number and time elapsed
-            print(
-                f"the epoch {e} took {time.time_ns() - start_time} nanoseconds")
+            # Print timing info
+            if verbose:
+                print(f"Epoch {e+1}/{max_epochs} took {time.time() - start_time:.4f} seconds")
 
         print(f'Finished training after {e+1} epochs!')
-        return train_loss_hist, val_loss_hist, val_acc_hist, e
+        return train_loss_hist, val_loss_hist, val_acc_hist, e + 1
 
     def evaluate(self, x, y, batch_sz=64):
         '''Evaluates the accuracy and loss on the data `x` and labels `y`. Breaks the dataset into mini-batches for you
