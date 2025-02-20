@@ -276,7 +276,7 @@ class DeepNetwork:
         grads = tape.gradient(loss, self.all_net_params)
         self.opt.apply_gradients(zip(grads, self.all_net_params))
 
-    #@tf.function(jit_compile=True)
+    # @tf.function(jit_compile=True)
     @tf.function
     def train_step(self, x_batch, y_batch):
         '''Completely process a single mini-batch of data during training. This includes:
@@ -305,7 +305,7 @@ class DeepNetwork:
         self.update_params(tape, loss)
         return loss
 
-    #@tf.function(jit_compile=True)
+    # @tf.function(jit_compile=True)
     @tf.function
     def test_step(self, x_batch, y_batch):
         '''Completely process a single mini-batch of data during test/validation time. This includes:
@@ -447,11 +447,13 @@ class DeepNetwork:
                 val_acc_hist.append(val_acc.numpy())
                 val_loss_hist.append(val_loss.numpy())
 
-                recent_val_losses, stop_training = self.early_stopping(recent_val_losses, val_loss, patience)
-                
+                recent_val_losses, stop_training = self.early_stopping(
+                    recent_val_losses, val_loss, patience)
+
                 if verbose:
-                    print(f"Epoch {e+1}: Training Loss = {train_loss:.4f}, Validation Loss = {val_loss:.4f}, Validation Accuracy = {val_acc:.4f}")
-                
+                    print(
+                        f"Epoch {e+1}: Training Loss = {train_loss:.4f}, Validation Loss = {val_loss:.4f}, Validation Accuracy = {val_acc:.4f}")
+
                 if stop_training:
                     print(f"Early stopping triggered at epoch {e+1}")
                     break
@@ -461,7 +463,8 @@ class DeepNetwork:
 
             # Print timing info
             if verbose:
-                print(f"Epoch {e+1}/{max_epochs} took {time.time() - start_time:.4f} seconds")
+                print(
+                    f"Epoch {e+1}/{max_epochs} took {time.time() - start_time:.4f} seconds")
 
         print(f'Finished training after {e+1} epochs!')
         return train_loss_hist, val_loss_hist, val_acc_hist, e + 1
@@ -564,14 +567,13 @@ class DeepNetwork:
         - It may be helpful to think of `recent_val_losses` as a queue: the current loss value always gets inserted
         either at the beginning or end. The oldest value is then always on the other end of the list.
         '''
-        recent_val_losses.append(curr_val_loss)
 
-        if len(recent_val_losses) > patience:
-            recent_val_losses.pop(0)  # Maintain patience window
-
-        if len(recent_val_losses) == patience:
-            oldest_loss = recent_val_losses[0]
-            if oldest_loss < min(recent_val_losses[1:]):
+        if len(recent_val_losses) < patience:
+            recent_val_losses.append(curr_val_loss)
+        else:
+            recent_val_losses.pop(0)
+            recent_val_losses.append(curr_val_loss)
+            if recent_val_losses[0] < min(recent_val_losses[1:]):
                 return recent_val_losses, True  # Stop training
 
         return recent_val_losses, False  # Continue training
