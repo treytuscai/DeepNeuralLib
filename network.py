@@ -599,4 +599,7 @@ class DeepNetwork:
 
         TODO:
         1. Update the optimizer's learning rate.
-        2. Print out the optimizer's learning rate before and afte
+        2. Print out the optimizer's learning rate before and after the change.
+        '''
+        print('Current lr=', self.opt.learning_rate.numpy(), end=' ')
+        print('Updated lr=', self.opt.learning_rate.numpy())
