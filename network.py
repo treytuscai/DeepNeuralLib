@@ -80,6 +80,9 @@ class DeepNetwork:
         if optimizer == 'adam':
             self.opt = tf.keras.optimizers.Adam(
                 learning_rate=lr, beta_1=beta_1)
+        elif optimizer == 'adamw':
+            self.opt = tf.keras.optimizers.AdamW(
+                learning_rate=lr, beta_1=beta_1, weight_decay=self.reg)
         else:
             raise ValueError(f'Unknown optimizer {optimizer}')
 
@@ -596,7 +599,4 @@ class DeepNetwork:
 
         TODO:
         1. Update the optimizer's learning rate.
-        2. Print out the optimizer's learning rate before and after the change.
-        '''
-        print('Current lr=', self.opt.learning_rate.numpy(), end=' ')
-        print('Updated lr=', self.opt.learning_rate.numpy())
+        2. Print out the optimizer's learning rate before and afte

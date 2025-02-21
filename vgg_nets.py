@@ -403,45 +403,4 @@ class VGG15Plus(network.DeepNetwork):
         pass
 
     def __call__(self, x):
-        '''Forward pass through the VGG15 network with the data samples `x`.
-
-        Parameters:
-        -----------
-        x: tf.constant. tf.float32s. shape=(B, Iy, Ix, n_chans).
-            Data samples.
-
-        Returns:
-        --------
-        tf.constant. tf.float32s. shape=(B, C).
-            Activations produced by the output layer to the data.
-
-        NOTE: Use the functional API to perform the forward pass through your network!
-        '''
-        pass
-
-
-class VGG15PlusPlus(network.DeepNetwork):
-    '''The VGG15PlusPlus network is the VGG15 network with:
-    1. Batch normalization added to all Conv2D layers and all non-output Dense layers.
-    2. Dropout added to all conv blocks.
-    '''
-    def __init__(self, C, input_feats_shape, filters=(64, 128, 256, 512, 512), dense_units=(512,), reg=0.6,
-                 wt_scale=1e-3, wt_init='he', conv_dropout=True, conv_dropout_rates=(0.3, 0.4, 0.4, 0.4, 0.4)):
-        pass
-
-    def __call__(self, x):
-        '''Forward pass through the VGG15 network with the data samples `x`.
-
-        Parameters:
-        -----------
-        x: tf.constant. tf.float32s. shape=(B, Iy, Ix, n_chans).
-            Data samples.
-
-        Returns:
-        --------
-        tf.constant. tf.float32s. shape=(B, C).
-            Activations produced by the output layer to the data.
-
-        NOTE: Use the functional API to perform the forward pass through your network!
-        '''
-        pass
+        '''Forward pass
