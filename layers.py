@@ -236,7 +236,10 @@ class Layer:
         float.
             The Kaiming gain.
         '''
-        pass
+        if self.act_fun_name == 'relu':
+            return tf.sqrt(2.0)
+        else:
+            return 1.0
 
     def is_doing_batchnorm(self):
         '''Returns whether the current layer is using batch normalization.
@@ -421,12 +424,12 @@ class Dense(Layer):
         input_size = input_shape[-1]
         if self.wt_init == 'normal':
             self.wts = tf.Variable(tf.random.normal([input_size, self.units], stddev=self.wt_scale))
+            self.b = tf.Variable(tf.random.normal([self.units], stddev=self.wt_scale))
         elif self.wt_init == 'he':
-            self.wts = tf.Variable(tf.random.normal([input_size, self.units], stddev=tf.sqrt(2. / input_size)))
+            self.wts = tf.Variable(tf.random.normal([input_size, self.units], stddev= self.get_kaiming_gain() / tf.sqrt(float(input_size))))
+            self.b = tf.Variable(tf.zeros([self.units]))
         else:
             raise ValueError(f"Unsupported weight initialization method: {self.wt_init}")
-        
-        self.b = tf.Variable(tf.random.normal([self.units], stddev=self.wt_scale))
 
     def compute_net_input(self, x):
         '''Computes the net input for the current Dense layer.
@@ -729,12 +732,13 @@ class Conv2D(Layer):
         input_size = input_shape[-1]
         if self.wt_init == 'normal':
             self.wts = tf.Variable(tf.random.normal([self.kernel_size[0], self.kernel_size[1], input_size, self.units], stddev=self.wt_scale))
+            self.b = tf.Variable(tf.random.normal([self.units], stddev=self.wt_scale))
         elif self.wt_init == 'he':
-            self.wts = tf.Variable(tf.random.normal([self.kernel_size[0], self.kernel_size[1], input_size, self.units], stddev=tf.sqrt(2. / input_size)))
+            self.wts = tf.Variable(tf.random.normal([self.kernel_size[0], self.kernel_size[1], input_size, self.units], stddev=self.get_kaiming_gain() / tf.sqrt(float(self.kernel_size[0] * self.kernel_size[1] * input_size))))
+            self.b = tf.Variable(tf.zeros([self.units]))
         else:
             raise ValueError(f"Unsupported weight initialization method: {self.wt_init}")
         
-        self.b = tf.Variable(tf.random.normal([self.units], stddev=self.wt_scale))
 
     def compute_net_input(self, x):
         '''Computes the net input for the current Conv2D layer. Uses SAME boundary conditions.
