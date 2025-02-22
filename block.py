@@ -1,6 +1,6 @@
 '''block.py
 Defines the parent Block class and VGG blocks
-YOUR NAMES HERE
+Trey Tuscai and Gordon Doore
 CS444: Deep Learning
 '''
 from layers import Conv2D, MaxPool2D, Dropout, Dense

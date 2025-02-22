@@ -1,6 +1,6 @@
 '''vgg_nets.py
 The family of VGG neural networks implemented using the CS444 deep learning library
-YOUR NAMES HERE
+Trey Tuscai and Gordon Doore
 CS444: Deep Learning
 '''
 import network

@@ -1,6 +1,6 @@
 '''layers.py
 Neural network layers (e.g. Dense, Conv2D, etc.) implemented with the low-level TensorFlow API.
-YOUR NAMES HERE
+Trey Tuscai and Gordon Doore
 CS444: Deep Learning
 '''
 import tensorflow as tf

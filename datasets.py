@@ -1,6 +1,6 @@
 '''datasets.py
 Loads and preprocesses datasets for use in neural networks.
-YOUR NAMES HERE
+Trey Tuscai and Gordon Doore
 CS444: Deep Learning
 '''
 import tensorflow as tf
