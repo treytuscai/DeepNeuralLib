@@ -193,6 +193,8 @@ class Layer:
         Python list by calling the `list` function — e.g. `list(blah)`.
         '''
         net_in = self.compute_net_input(x)
+        if self.do_batch_norm and self.bn_mean is not None:
+            net_in = self.compute_batch_norm(net_in)
         net_act = self.compute_net_activation(net_in)
 
         if self.output_shape is None:
@@ -251,7 +253,7 @@ class Layer:
         bool.
             True if the layer has batch normalization turned on, False otherwise.
         '''
-        pass
+        return self.do_batch_norm
 
     def init_batchnorm_params(self):
         '''Initializes the trainable and non-trainable parameters used in batch normalization. This includes the
@@ -288,6 +290,18 @@ class Layer:
         if not self.do_batch_norm:
             return
 
+        param_shape = [1] * (len(self.output_shape) - 1) + [self.output_shape[-1]]
+
+        # Batch norm parameters
+        self.bn_gain = tf.Variable(tf.ones(param_shape), trainable=True)
+        self.bn_bias = tf.Variable(tf.zeros(param_shape), trainable=True)
+
+        # Moving avg mean and stdev
+        self.bn_mean = tf.Variable(tf.zeros(param_shape), trainable=False)
+        self.bn_stdev = tf.Variable(tf.ones(param_shape), trainable=False)
+
+        # Turn off normal bias in the layer
+        self.b = tf.Variable(0.0, trainable=False)
 
     def compute_batch_norm(self, net_in, eps=0.001):
         '''Computes the batch normalization based on on the net input `net_in`.
@@ -479,7 +493,18 @@ class Dense(Layer):
         - The net input should be normalized using the current mini-batch mean/stddev during training and the moving avg
         parameters when not training.
         '''
-        pass
+        if self.is_training:
+            batch_mean = tf.reduce_mean(net_in, axis=0, keepdims=True)
+            batch_stdev = tf.math.reduce_std(net_in, axis=0, keepdims=True)
+
+            self.bn_mean.assign(self.batch_norm_momentum * self.bn_mean + (1 - self.batch_norm_momentum) * batch_mean)
+            self.bn_stdev.assign(self.batch_norm_momentum * self.bn_stdev + (1 - self.batch_norm_momentum) * batch_stdev)
+
+            normalized = (net_in - batch_mean) / (batch_stdev + eps)
+        else:
+            normalized = (net_in - self.bn_mean) / (self.bn_stdev + eps)
+            
+        return self.bn_gain * normalized + self.bn_bias
 
     def __str__(self):
         '''This layer's "ToString" method. Feel free to customize if you want to make the layer description fancy,
@@ -767,7 +792,7 @@ class Conv2D(Layer):
             self.init_params(x.shape)
 
         net_input = tf.nn.conv2d(input=x, filters=self.wts, strides=[1, self.strides, self.strides, 1], padding='SAME')
-        net_input = tf.nn.bias_add(net_input, self.b)
+        net_input = net_input + self.b
         
         return net_input
         
@@ -795,7 +820,18 @@ class Conv2D(Layer):
         - The difference is in the moving average parameters: as in Dense, they are computed over the non-batch
         dimensions. This likely requires a small code change.
         '''
-        pass
+        if self.is_training:
+            batch_mean = tf.reduce_mean(net_in, axis=[0, 1, 2], keepdims=True)
+            batch_stdev = tf.math.reduce_std(net_in, axis=[0, 1, 2], keepdims=True)
+
+            self.bn_mean.assign(self.batch_norm_momentum * self.bn_mean + (1 - self.batch_norm_momentum) * batch_mean)
+            self.bn_stdev.assign(self.batch_norm_momentum * self.bn_stdev + (1 - self.batch_norm_momentum) * batch_stdev)
+
+            normalized = (net_in - batch_mean) / (batch_stdev + eps)
+        else:
+            normalized = (net_in - self.bn_mean) / (self.bn_stdev + eps)
+            
+        return self.bn_gain * normalized + self.bn_bias
 
     def __str__(self):
         '''This layer's "ToString" method. Feel free to customize if you want to make the layer description fancy,
