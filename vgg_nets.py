@@ -375,6 +375,27 @@ class VGG4Plus(network.DeepNetwork):
         '''
         super().__init__(input_feats_shape=input_feats_shape, reg=reg)
 
+        # Conv2D
+        self.conv1 = Conv2D(name="conv1", units=filters, kernel_size=(3, 3), wt_scale=wt_scale, prev_layer_or_block=None, wt_init=wt_init, do_batch_norm=True)
+        
+        # Conv2D
+        self.conv2 = Conv2D(name="conv2", units=filters, kernel_size=(3, 3), wt_scale=wt_scale, prev_layer_or_block=self.conv1, wt_init=wt_init, do_batch_norm=True)
+        
+        # MaxPool2D
+        self.pool1 = MaxPool2D(name="maxpool1", strides=2, prev_layer_or_block=self.conv2)
+
+        # Flatten
+        self.flatten1 = Flatten(name="flat", prev_layer_or_block=self.pool1)
+
+        # Dense
+        self.dense1 = Dense(name="dense1", units=dense_units, wt_scale=wt_scale, prev_layer_or_block=self.flatten1, wt_init=wt_init, do_batch_norm=True)
+        
+        # Dropout
+        self.dropout1 = Dropout(name="dropout1", rate=0.5, prev_layer_or_block=self.dense1)
+
+        # Dense
+        self.output_layer = Dense(name="output", units=C, activation='softmax', wt_scale=wt_scale, prev_layer_or_block=self.dropout1, wt_init=wt_init, do_batch_norm=True) 
+
     def __call__(self, x):
         '''Forward pass through the VGG15 network with the data samples `x`.
 
@@ -390,7 +411,13 @@ class VGG4Plus(network.DeepNetwork):
 
         NOTE: Use the functional API to perform the forward pass through your network!
         '''
-        pass
+        x = self.conv1(x)
+        x = self.conv2(x)
+        x = self.pool1(x)
+        x = self.flatten1(x)
+        x = self.dense1(x)
+        x = self.dropout1(x)
+        return self.output_layer(x)
 
 
 class VGG15Plus(network.DeepNetwork):
@@ -424,7 +451,23 @@ class VGG15Plus(network.DeepNetwork):
         conv_dropout_rates: tuple of floats. len(conv_dropout_rates)=num_conv_blocks
             The dropout rate to use in each conv block. Only has an effect if `conv_dropout` is True.
         '''
-        pass
+        super().__init__(input_feats_shape=input_feats_shape, reg=reg)
+        
+        # Conv2D Blocks
+        self.conv_block_1 = VGGConvBlock(blockname="ConvBlock1", units=filters[0], prev_layer_or_block=None, wt_scale=wt_scale, dropout=conv_dropout, dropout_rate=conv_dropout_rates[0], wt_init=wt_init, do_batch_norm=True)
+        self.conv_block_2 = VGGConvBlock(blockname="ConvBlock2", units=filters[1], prev_layer_or_block=self.conv_block_1, wt_scale=wt_scale, dropout=conv_dropout, dropout_rate=conv_dropout_rates[1], wt_init=wt_init, do_batch_norm=True)
+        self.conv_block_3 = VGGConvBlock(blockname="ConvBlock3", units=filters[2], prev_layer_or_block=self.conv_block_2, num_conv_layers=3, wt_scale=wt_scale, dropout=conv_dropout, dropout_rate=conv_dropout_rates[2], wt_init=wt_init, do_batch_norm=True)
+        self.conv_block_4 = VGGConvBlock(blockname="ConvBlock4", units=filters[3], prev_layer_or_block=self.conv_block_3, num_conv_layers=3, wt_scale=wt_scale, dropout=conv_dropout, dropout_rate=conv_dropout_rates[3], wt_init=wt_init, do_batch_norm=True)
+        self.conv_block_5 = VGGConvBlock(blockname="ConvBlock5", units=filters[4], prev_layer_or_block=self.conv_block_4, num_conv_layers=3, wt_scale=wt_scale, dropout=conv_dropout, dropout_rate=conv_dropout_rates[4], wt_init=wt_init, do_batch_norm=True)
+
+        # Flatten Layer
+        self.flatten = self.flatten1 = Flatten(name="flat", prev_layer_or_block=self.conv_block_5)
+
+        # Dense Block
+        self.dense_block = VGGDenseBlock(blockname="DenseBlock1", units=dense_units, prev_layer_or_block=self.flatten, num_dense_blocks=1, wt_scale=wt_scale, wt_init=wt_init, do_batch_norm=True)
+
+        # Output Layer
+        self.output_layer = Dense(name="output_layer", units=C, activation='softmax', wt_scale=wt_scale, prev_layer_or_block=self.dense_block, wt_init=wt_init, do_batch_norm=True)
 
     def __call__(self, x):
         '''Forward pass through the VGG15 network with the data samples `x`.
@@ -441,7 +484,15 @@ class VGG15Plus(network.DeepNetwork):
 
         NOTE: Use the functional API to perform the forward pass through your network!
         '''
-        pass
+        x = self.conv_block_1(x)
+        x = self.conv_block_2(x)
+        x = self.conv_block_3(x)
+        x = self.conv_block_4(x)
+        x = self.conv_block_5(x)
+        x = self.flatten(x)
+        x = self.dense_block(x)
+        x = self.output_layer(x)
+        return x
 
 
 class VGG15PlusPlus(network.DeepNetwork):
@@ -451,7 +502,23 @@ class VGG15PlusPlus(network.DeepNetwork):
     '''
     def __init__(self, C, input_feats_shape, filters=(64, 128, 256, 512, 512), dense_units=(512,), reg=0.6,
                  wt_scale=1e-3, wt_init='he', conv_dropout=True, conv_dropout_rates=(0.3, 0.4, 0.4, 0.4, 0.4)):
-        pass
+        super().__init__(input_feats_shape=input_feats_shape, reg=reg)
+        
+        # Conv2D Blocks
+        self.conv_block_1 = VGGConvBlock(blockname="ConvBlock1", units=filters[0], prev_layer_or_block=None, wt_scale=wt_scale, dropout=conv_dropout, dropout_rate=conv_dropout_rates[0], wt_init=wt_init, do_batch_norm=True)
+        self.conv_block_2 = VGGConvBlock(blockname="ConvBlock2", units=filters[1], prev_layer_or_block=self.conv_block_1, wt_scale=wt_scale, dropout=conv_dropout, dropout_rate=conv_dropout_rates[1], wt_init=wt_init, do_batch_norm=True)
+        self.conv_block_3 = VGGConvBlock(blockname="ConvBlock3", units=filters[2], prev_layer_or_block=self.conv_block_2, num_conv_layers=3, wt_scale=wt_scale, dropout=conv_dropout, dropout_rate=conv_dropout_rates[2], wt_init=wt_init, do_batch_norm=True)
+        self.conv_block_4 = VGGConvBlock(blockname="ConvBlock4", units=filters[3], prev_layer_or_block=self.conv_block_3, num_conv_layers=3, wt_scale=wt_scale, dropout=conv_dropout, dropout_rate=conv_dropout_rates[3], wt_init=wt_init, do_batch_norm=True)
+        self.conv_block_5 = VGGConvBlock(blockname="ConvBlock5", units=filters[4], prev_layer_or_block=self.conv_block_4, num_conv_layers=3, wt_scale=wt_scale, dropout=conv_dropout, dropout_rate=conv_dropout_rates[4], wt_init=wt_init, do_batch_norm=True)
+
+        # Flatten Layer
+        self.flatten = self.flatten1 = Flatten(name="flat", prev_layer_or_block=self.conv_block_5)
+
+        # Dense Block
+        self.dense_block = VGGDenseBlock(blockname="DenseBlock1", units=dense_units, prev_layer_or_block=self.flatten, num_dense_blocks=1, wt_scale=wt_scale, wt_init=wt_init, do_batch_norm=True)
+
+        # Output Layer
+        self.output_layer = Dense(name="output_layer", units=C, activation='softmax', wt_scale=wt_scale, prev_layer_or_block=self.dense_block, wt_init=wt_init, do_batch_norm=True)
 
     def __call__(self, x):
         '''Forward pass through the VGG15 network with the data samples `x`.
@@ -468,7 +535,15 @@ class VGG15PlusPlus(network.DeepNetwork):
 
         NOTE: Use the functional API to perform the forward pass through your network!
         '''
-        pass
+        x = self.conv_block_1(x)
+        x = self.conv_block_2(x)
+        x = self.conv_block_3(x)
+        x = self.conv_block_4(x)
+        x = self.conv_block_5(x)
+        x = self.flatten(x)
+        x = self.dense_block(x)
+        x = self.output_layer(x)
+        return x
 
 class VGG19(network.DeepNetwork):
     '''The VGG19 network'''
