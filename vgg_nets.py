@@ -394,7 +394,7 @@ class VGG4Plus(network.DeepNetwork):
         self.dropout1 = Dropout(name="dropout1", rate=0.5, prev_layer_or_block=self.dense1)
 
         # Dense
-        self.output_layer = Dense(name="output", units=C, activation='softmax', wt_scale=wt_scale, prev_layer_or_block=self.dropout1, wt_init=wt_init, do_batch_norm=True) 
+        self.output_layer = Dense(name="output", units=C, activation='softmax', wt_scale=wt_scale, prev_layer_or_block=self.dropout1, wt_init=wt_init) 
 
     def __call__(self, x):
         '''Forward pass through the VGG15 network with the data samples `x`.
