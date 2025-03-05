@@ -467,7 +467,7 @@ class VGG15Plus(network.DeepNetwork):
         self.dense_block = VGGDenseBlock(blockname="DenseBlock1", units=dense_units, prev_layer_or_block=self.flatten, num_dense_blocks=1, wt_scale=wt_scale, wt_init=wt_init, do_batch_norm=True)
 
         # Output Layer
-        self.output_layer = Dense(name="output_layer", units=C, activation='softmax', wt_scale=wt_scale, prev_layer_or_block=self.dense_block, wt_init=wt_init, do_batch_norm=True)
+        self.output_layer = Dense(name="output_layer", units=C, activation='softmax', wt_scale=wt_scale, prev_layer_or_block=self.dense_block, wt_init=wt_init)
 
     def __call__(self, x):
         '''Forward pass through the VGG15 network with the data samples `x`.
@@ -518,7 +518,7 @@ class VGG15PlusPlus(network.DeepNetwork):
         self.dense_block = VGGDenseBlock(blockname="DenseBlock1", units=dense_units, prev_layer_or_block=self.flatten, num_dense_blocks=1, wt_scale=wt_scale, wt_init=wt_init, do_batch_norm=True)
 
         # Output Layer
-        self.output_layer = Dense(name="output_layer", units=C, activation='softmax', wt_scale=wt_scale, prev_layer_or_block=self.dense_block, wt_init=wt_init, do_batch_norm=True)
+        self.output_layer = Dense(name="output_layer", units=C, activation='softmax', wt_scale=wt_scale, prev_layer_or_block=self.dense_block, wt_init=wt_init)
 
     def __call__(self, x):
         '''Forward pass through the VGG15 network with the data samples `x`.

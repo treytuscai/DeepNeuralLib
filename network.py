@@ -421,6 +421,8 @@ class DeepNetwork:
 
         train_loss_hist, val_loss_hist, val_acc_hist = [], [], []
         recent_val_losses = []
+        recent_lr_losses = []
+        lr_decay_count = 0
 
         # Initialize random number generator
         rng = np.random.default_rng(seed=12)
@@ -452,6 +454,16 @@ class DeepNetwork:
 
                 recent_val_losses, stop_training = self.early_stopping(
                     recent_val_losses, val_loss, patience)
+                
+                if len(recent_lr_losses) < lr_patience:
+                    recent_lr_losses.append(val_loss)
+                else:
+                    recent_lr_losses.pop(0)
+                    recent_lr_losses.append(val_loss)
+                    if recent_lr_losses[0] < min(recent_lr_losses[1:]) and lr_max_decays > lr_decay_count:
+                        self.update_lr(lr_decay_factor)
+                        recent_lr_losses.clear()
+                        lr_decay_count += 1
 
                 if verbose:
                     print(
@@ -602,4 +614,6 @@ class DeepNetwork:
         2. Print out the optimizer's learning rate before and after the change.
         '''
         print('Current lr=', self.opt.learning_rate.numpy(), end=' ')
+        new_lr = self.opt.learning_rate.numpy() * lr_decay_rate
+        self.opt.learning_rate = new_lr
         print('Updated lr=', self.opt.learning_rate.numpy())
