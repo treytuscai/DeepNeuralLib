@@ -111,7 +111,7 @@ class GlobalAveragePooling2D(layers.Layer):
 
         TODO: Call the superclass constructor, passing in the appropriate information.
         '''
-        pass
+        super().__init__(name, 'linear', prev_layer_or_block)
 
     def compute_net_input(self, x):
         '''Computes the net input using 2D global average pooling.
@@ -128,7 +128,7 @@ class GlobalAveragePooling2D(layers.Layer):
 
         NOTE: You should defer to your function in inception_ops.
         '''
-        pass
+        return global_avg_pooling_2d(x)
 
     def __str__(self):
         '''This layer's "ToString" method. Feel free to customize if you want to make the layer description fancy,

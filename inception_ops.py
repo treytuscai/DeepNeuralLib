@@ -83,4 +83,4 @@ def global_avg_pooling_2d(x):
 
     NOTE: You should use 100% TensorFlow to implement this, since you will call this in your InceptionNet.
     '''
-    pass
+    return tf.reduce_mean(x, axis=[1, 2])
