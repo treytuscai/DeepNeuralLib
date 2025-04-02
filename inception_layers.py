@@ -40,7 +40,7 @@ class Conv2D1x1(layers.Conv2D):
 
         NOTE: We always want to use He weight initialization :)
         '''
-        pass
+        super().__init__(name, units, strides=strides, activation=activation, prev_layer_or_block=prev_layer_or_block, do_batch_norm=do_batch_norm)
 
     def init_params(self, input_shape):
         '''Initializes the Conv2D1x1 layer's weights and biases EXCLUSIVELY using He initialization.
@@ -54,6 +54,8 @@ class Conv2D1x1(layers.Conv2D):
         NOTE: This is the same as the Conv2D method except for the 2D shape of the weights.
         '''
         N, I_y, I_x, n_chans = input_shape
+        self.wts = tf.Variable(tf.random.normal([n_chans, self.units], stddev=self.get_kaiming_gain() / tf.sqrt(float(self.kernel_size[0] * self.kernel_size[1] * input_size))))
+        self.b = tf.Variable(tf.zeros([self.units]))
 
     def compute_net_input(self, x):
         '''Computes the net input for the current 1x1 2D Convolution layer.
@@ -76,7 +78,13 @@ class Conv2D1x1(layers.Conv2D):
 
         NOTE: Don't forget the bias and to pass along the stride!
         '''
-        pass
+        if self.wts is None:
+            self.init_params(x.shape)
+
+        net_input = conv_1x1_batch(x, self.wts, self.strides)
+        net_input = net_input + self.b
+    
+        return net_input
 
     def __str__(self):
         '''This layer's "ToString" method. Feel free to customize if you want to make the layer description fancy,
