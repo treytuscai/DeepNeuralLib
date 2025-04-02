@@ -63,7 +63,26 @@ class InceptionBlock(block.Block):
         it is. For example, 'Inception1/conv_0'. This will help making sense of the summary print outs when the net is
         compiled.
         '''
-        pass
+        super().__init__(blockname, prev_layer_or_block=prev_layer_or_block)
+
+        # Branch 1: 1x1 convolution
+        self.branch1_0 = Conv2D1x1(f"{blockname}/branch1_0_conv1x1", branch1_units)
+        self.layers.append(self.branch1_0)
+
+        # Branch 2: 1x1 convolution → 3x3 convolution
+        self.branch2_0 = Conv2D1x1(f"{blockname}/branch2_0_conv1x1", branch2_units[0])
+        self.branch2_1 = Conv2D(f"{blockname}/branch2_1_conv3x3", branch2_units[1], kernel_size=(3,3), wt_init='he', do_batch_norm=True)
+        self.layers.extend([self.branch2_0, self.branch2_1])
+
+        # Branch 3: 1x1 convolution → 5x5 convolution
+        self.branch3_0 = Conv2D1x1(f"{blockname}/branch3_0_conv1x1", branch3_units[0])
+        self.branch3_1 = Conv2D(f"{blockname}/branch3_1_conv5x5", branch3_units[1], kernel_size=(5,5), wt_init='he', do_batch_norm=True)
+        self.layers.extend([self.branch3_0, self.branch3_1])
+
+        # Branch 4: 3x3 max pooling → 1x1 convolution
+        self.branch4_0 = MaxPool2D(f"{blockname}/branch4_0_maxpool3x3", pool_size=(3,3), padding='SAME')
+        self.branch4_1 = Conv2D1x1(f"{blockname}/branch4_1_conv1x1", branch4_units)
+        self.layers.extend([self.branch4_0, self.branch4_1])
 
 
     def __call__(self, x):
@@ -81,4 +100,15 @@ class InceptionBlock(block.Block):
             Activations produced by each Inception block branch, concatenated together along the neuron dimension.
             B1, B2_1, B3_1, B4 refer to the number of neurons at the end of each of the 4 branches.
         '''
-        pass
+        branch1_out = self.branch1_0(x)
+
+        branch2_out = self.branch2_0(x)
+        branch2_out = self.branch2_1(branch2_out)
+
+        branch3_out = self.branch3_0(x)
+        branch3_out = self.branch3_1(branch3_out)
+
+        branch4_out = self.branch4_0(x)
+        branch4_out = self.branch4_1(branch4_out)
+
+        return tf.concat([branch1_out, branch2_out, branch3_out, branch4_out], axis=-1)
