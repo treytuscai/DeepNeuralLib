@@ -73,7 +73,50 @@ class InceptionNet(network.DeepNetwork):
         - The only requirement on your variable names is that you MUST name your output layer `self.output_layer`.
         - Use helpful names for your layers and variables. You will have to live with them!
         '''
-        pass
+        super().__init__(input_feats_shape=input_feats_shape, reg=reg)
+
+        # Conv2D
+        self.Conv2D_1 = Conv2D(name="Conv2D_1", units=64, kernel_size=(3, 3), prev_layer_or_block=None, wt_init="he", do_batch_norm=True)
+
+        # MaxPool2D
+        self.MaxPool3x3_0 = MaxPool2D(name="MaxPool3x3_0", pool_size=(3, 3), strides=2, prev_layer_or_block=self.Conv2D_1, padding='SAME')
+
+        # First set of InceptionBlocks
+        self.Inception1 = InceptionBlock(
+            blockname="Inception1", prev_layer_or_block=self.MaxPool3x3_0, 
+            branch1_units=32, branch2_units=(32,64), branch3_units=(16,32), branch4_units=32)
+
+        self.Inception2 = InceptionBlock(
+            blockname="Inception2", prev_layer_or_block=self.Inception1, 
+            branch1_units=64, branch2_units=(64,128), branch3_units=(32,64), branch4_units=64)
+
+        # MaxPool2D
+        self.MaxPool3x3_1 = MaxPool2D(name="MaxPool3x3_1", pool_size=(3, 3), strides=2, prev_layer_or_block=self.Inception2, padding='SAME')
+
+        # Second set of InceptionBlocks
+        self.Inception3 = InceptionBlock(
+            blockname="Inception3", prev_layer_or_block=self.MaxPool3x3_1, 
+            branch1_units=64, branch2_units=(96,128), branch3_units=(32,64), branch4_units=64)
+
+        self.Inception4 = InceptionBlock(
+            blockname="Inception4", prev_layer_or_block=self.Inception3, 
+            branch1_units=64, branch2_units=(96,128), branch3_units=(32,64), branch4_units=64)
+
+        self.Inception5 = InceptionBlock(
+            blockname="Inception5", prev_layer_or_block=self.Inception4, 
+            branch1_units=128, branch2_units=(128,196), branch3_units=(64,128), branch4_units=128)
+
+        # MaxPool2D
+        self.MaxPool3x3_2 = MaxPool2D(name="MaxPool3x3_2", pool_size=(3, 3), strides=2, prev_layer_or_block=self.Inception5, padding='SAME')
+
+        # Global Average Pooling
+        self.GlobalPool = GlobalAveragePooling2D(name="GlobalPool", prev_layer_or_block=self.MaxPool3x3_2)
+
+        # Dropout
+        self.Dropout = Dropout(name="Dropout", prev_layer_or_block=self.GlobalPool, rate=0.4)
+
+        # Dense Output
+        self.output_layer = Dense(name="Output", units=C, activation='softmax', wt_init='he', prev_layer_or_block=self.Dropout)
 
     def __call__(self, x):
         '''Forward pass through the InceptionNet with the data samples `x`.
@@ -88,4 +131,16 @@ class InceptionNet(network.DeepNetwork):
         tf.constant. tf.float32s. shape=(B, C).
             Activations produced by the output layer to the data.
         '''
-        pass
+        x = self.Conv2D_1(x)
+        x = self.MaxPool3x3_0(x)
+        x = self.Inception1(x)
+        x = self.Inception2(x)
+        x = self.MaxPool3x3_1(x)
+        x = self.Inception3(x)
+        x = self.Inception4(x)
+        x = self.Inception5(x)
+        x = self.MaxPool3x3_2(x)
+        x = self.GlobalPool(x)
+        x = self.Dropout(x)
+        x = self.output_layer(x)
+        return x
