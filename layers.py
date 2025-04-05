@@ -6,10 +6,12 @@ CS444: Deep Learning
 import tensorflow as tf
 from math import pi
 
+
 class Layer:
     '''Parent class for all specific neural network layers (e.g. Dense, Conv2D). Implements all functionality shared in
     common across different layers (e.g. net_in, net_act).
     '''
+
     def __init__(self, layer_name, activation, prev_layer_or_block, do_batch_norm=False, batch_norm_momentum=0.99,
                  do_layer_norm=False):
         '''Neural network layer constructor. You should not generally make Layers objects, rather you should instantiate
@@ -60,8 +62,6 @@ class Layer:
         self.bn_stdev = None
         self.ln_gain = None
         self.ln_bias = None
-
-
 
     def get_name(self):
         '''Returns the human-readable string name of the current layer.'''
@@ -116,7 +116,6 @@ class Layer:
         '''
         self.is_training.assign(is_training)
 
-
     def init_params(self, input_shape):
         '''Initializes the Layer's parameters (wts + bias), if it has any.
 
@@ -164,7 +163,8 @@ class Layer:
         elif self.act_fun_name == 'softmax':
             return tf.nn.softmax(net_in)
         else:
-            raise ValueError(f'Unknown activation function {self.act_fun_name}')
+            raise ValueError(
+                f'Unknown activation function {self.act_fun_name}')
 
     def __call__(self, x):
         '''Do a forward pass thru the layer with mini-batch `x`.
@@ -201,8 +201,6 @@ class Layer:
             self.output_shape = list(net_act.shape)
 
         return net_act
-
-        
 
     def get_params(self):
         '''Gets a list of all the parameters learned by the layer (wts, bias, etc.).
@@ -290,7 +288,8 @@ class Layer:
         if not self.do_batch_norm:
             return
 
-        param_shape = [1] * (len(self.output_shape) - 1) + [self.output_shape[-1]]
+        param_shape = [1] * (len(self.output_shape) - 1) + \
+            [self.output_shape[-1]]
 
         # Batch norm parameters
         self.bn_gain = tf.Variable(tf.ones(param_shape), trainable=True)
@@ -373,6 +372,7 @@ class Layer:
 
 class Dense(Layer):
     '''Neural network layer that uses Dense net input.'''
+
     def __init__(self, name, units, activation='relu', wt_scale=1e-3, prev_layer_or_block=None,
                  wt_init='normal', do_batch_norm=False, do_layer_norm=False):
         '''Dense layer constructor.
@@ -437,13 +437,17 @@ class Dense(Layer):
         '''
         input_size = input_shape[-1]
         if self.wt_init == 'normal':
-            self.wts = tf.Variable(tf.random.normal([input_size, self.units], stddev=self.wt_scale))
-            self.b = tf.Variable(tf.random.normal([self.units], stddev=self.wt_scale))
+            self.wts = tf.Variable(tf.random.normal(
+                [input_size, self.units], stddev=self.wt_scale))
+            self.b = tf.Variable(tf.random.normal(
+                [self.units], stddev=self.wt_scale))
         elif self.wt_init == 'he':
-            self.wts = tf.Variable(tf.random.normal([input_size, self.units], stddev= self.get_kaiming_gain() / tf.sqrt(float(input_size))))
+            self.wts = tf.Variable(tf.random.normal(
+                [input_size, self.units], stddev=self.get_kaiming_gain() / tf.sqrt(float(input_size))))
             self.b = tf.Variable(tf.zeros([self.units]))
         else:
-            raise ValueError(f"Unsupported weight initialization method: {self.wt_init}")
+            raise ValueError(
+                f"Unsupported weight initialization method: {self.wt_init}")
 
     def compute_net_input(self, x):
         '''Computes the net input for the current Dense layer.
@@ -463,9 +467,8 @@ class Dense(Layer):
         '''
         if self.wts is None:
             self.init_params(x.shape)
-        
+
         return x @ self.wts + self.b
-        
 
     def compute_batch_norm(self, net_in, eps=0.001):
         '''Computes the batch normalization in a manner that is appropriate for Dense layers.
@@ -497,13 +500,15 @@ class Dense(Layer):
             batch_mean = tf.reduce_mean(net_in, axis=0, keepdims=True)
             batch_stdev = tf.math.reduce_std(net_in, axis=0, keepdims=True)
 
-            self.bn_mean.assign(self.batch_norm_momentum * self.bn_mean + (1 - self.batch_norm_momentum) * batch_mean)
-            self.bn_stdev.assign(self.batch_norm_momentum * self.bn_stdev + (1 - self.batch_norm_momentum) * batch_stdev)
+            self.bn_mean.assign(self.batch_norm_momentum * self.bn_mean +
+                                (1 - self.batch_norm_momentum) * batch_mean)
+            self.bn_stdev.assign(self.batch_norm_momentum * self.bn_stdev +
+                                 (1 - self.batch_norm_momentum) * batch_stdev)
 
             normalized = (net_in - batch_mean) / (batch_stdev + eps)
         else:
             normalized = (net_in - self.bn_mean) / (self.bn_stdev + eps)
-            
+
         return self.bn_gain * normalized + self.bn_bias
 
     def __str__(self):
@@ -515,6 +520,7 @@ class Dense(Layer):
 
 class Dropout(Layer):
     '''A dropout layer that nixes/zeros out a proportion of the net input signals.'''
+
     def __init__(self, name, rate, prev_layer_or_block=None):
         '''Dropout layer constructor.
 
@@ -558,7 +564,8 @@ class Dropout(Layer):
         '''
         if self.is_training:
             keep_prob = 1.0 - self.rate
-            dropout_mask = tf.random.uniform(shape=tf.shape(x), minval=0, maxval=1, dtype=tf.float32) < keep_prob
+            dropout_mask = tf.random.uniform(shape=tf.shape(
+                x), minval=0, maxval=1, dtype=tf.float32) < keep_prob
             net_in = tf.cast(dropout_mask, tf.float32) * x
 
             net_in = net_in / keep_prob
@@ -576,6 +583,7 @@ class Dropout(Layer):
 
 class Flatten(Layer):
     '''A flatten layer that flattens the non-batch dimensions of the input signal.'''
+
     def __init__(self, name, prev_layer_or_block=None):
         '''Flatten layer constructor.
 
@@ -628,6 +636,7 @@ class Flatten(Layer):
 
 class MaxPool2D(Layer):
     '''A 2D maxpooling layer.'''
+
     def __init__(self, name, pool_size=(2, 2), strides=1, prev_layer_or_block=None, padding='VALID'):
         '''MaxPool2D layer constructor.
 
@@ -678,8 +687,9 @@ class MaxPool2D(Layer):
 
         Helpful link: https://www.tensorflow.org/api_docs/python/tf/nn/max_pool2d
         '''
-        pooled_output = tf.nn.max_pool2d(input=x, ksize=self.pool_size, strides=self.strides, padding=self.padding)
-        
+        pooled_output = tf.nn.max_pool2d(
+            input=x, ksize=self.pool_size, strides=self.strides, padding=self.padding)
+
         return pooled_output
 
     def __str__(self):
@@ -691,6 +701,7 @@ class MaxPool2D(Layer):
 
 class Conv2D(Layer):
     '''A 2D convolutional layer'''
+
     def __init__(self, name, units, kernel_size=(1, 1), strides=1, activation='relu', wt_scale=1e-3,
                  prev_layer_or_block=None, wt_init='normal', do_batch_norm=False):
         '''Conv2D layer constructor.
@@ -727,7 +738,7 @@ class Conv2D(Layer):
         TODO: Set the parameters as instance variables. Call the superclass constructor to handle setting instance vars
         the child has in common with the parent class.
         '''
-        
+
         super().__init__(name, activation, prev_layer_or_block, do_batch_norm)
 
         self.units = units
@@ -756,14 +767,17 @@ class Conv2D(Layer):
         '''
         input_size = input_shape[-1]
         if self.wt_init == 'normal':
-            self.wts = tf.Variable(tf.random.normal([self.kernel_size[0], self.kernel_size[1], input_size, self.units], stddev=self.wt_scale))
-            self.b = tf.Variable(tf.random.normal([self.units], stddev=self.wt_scale))
+            self.wts = tf.Variable(tf.random.normal(
+                [self.kernel_size[0], self.kernel_size[1], input_size, self.units], stddev=self.wt_scale))
+            self.b = tf.Variable(tf.random.normal(
+                [self.units], stddev=self.wt_scale))
         elif self.wt_init == 'he':
-            self.wts = tf.Variable(tf.random.normal([self.kernel_size[0], self.kernel_size[1], input_size, self.units], stddev=self.get_kaiming_gain() / tf.sqrt(float(self.kernel_size[0] * self.kernel_size[1] * input_size))))
+            self.wts = tf.Variable(tf.random.normal([self.kernel_size[0], self.kernel_size[1], input_size, self.units], stddev=self.get_kaiming_gain(
+            ) / tf.sqrt(float(self.kernel_size[0] * self.kernel_size[1] * input_size))))
             self.b = tf.Variable(tf.zeros([self.units]))
         else:
-            raise ValueError(f"Unsupported weight initialization method: {self.wt_init}")
-        
+            raise ValueError(
+                f"Unsupported weight initialization method: {self.wt_init}")
 
     def compute_net_input(self, x):
         '''Computes the net input for the current Conv2D layer. Uses SAME boundary conditions.
@@ -791,11 +805,11 @@ class Conv2D(Layer):
         if self.wts is None:
             self.init_params(x.shape)
 
-        net_input = tf.nn.conv2d(input=x, filters=self.wts, strides=[1, self.strides, self.strides, 1], padding='SAME')
+        net_input = tf.nn.conv2d(input=x, filters=self.wts, strides=[
+                                 1, self.strides, self.strides, 1], padding='SAME')
         net_input = net_input + self.b
-        
+
         return net_input
-        
 
     def compute_batch_norm(self, net_in, eps=0.001):
         '''Computes the batch normalization in a manner that is appropriate for Conv2D layers.
@@ -822,15 +836,18 @@ class Conv2D(Layer):
         '''
         if self.is_training:
             batch_mean = tf.reduce_mean(net_in, axis=[0, 1, 2], keepdims=True)
-            batch_stdev = tf.math.reduce_std(net_in, axis=[0, 1, 2], keepdims=True)
+            batch_stdev = tf.math.reduce_std(
+                net_in, axis=[0, 1, 2], keepdims=True)
 
-            self.bn_mean.assign(self.batch_norm_momentum * self.bn_mean + (1 - self.batch_norm_momentum) * batch_mean)
-            self.bn_stdev.assign(self.batch_norm_momentum * self.bn_stdev + (1 - self.batch_norm_momentum) * batch_stdev)
+            self.bn_mean.assign(self.batch_norm_momentum * self.bn_mean +
+                                (1 - self.batch_norm_momentum) * batch_mean)
+            self.bn_stdev.assign(self.batch_norm_momentum * self.bn_stdev +
+                                 (1 - self.batch_norm_momentum) * batch_stdev)
 
             normalized = (net_in - batch_mean) / (batch_stdev + eps)
         else:
             normalized = (net_in - self.bn_mean) / (self.bn_stdev + eps)
-            
+
         return self.bn_gain * normalized + self.bn_bias
 
     def __str__(self):
