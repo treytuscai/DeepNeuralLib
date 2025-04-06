@@ -42,7 +42,20 @@ def stack_residualblocks(stackname, units, num_blocks, prev_layer_or_block, firs
     preprending the stack name to which it belongs. For example, if this is stack_1, call the first two blocks
     'stack_1/block_1' and 'stack_1/block_2'.
     '''
-    pass
+    blocks = []
+    for i in range(num_blocks):
+        block_name = f"{stackname}/block_{i + 1}"
+        stride = first_block_stride if i == 0 else 1
+        input_block = prev_layer_or_block if i == 0 else blocks[-1]
+
+        if block_type == 'residual':
+            block = ResidualBlock(block_name, units=units, stride=stride, prev_layer=input_block)
+        else:
+            raise ValueError(f"Unsupported block_type: {block_type}")
+
+        blocks.append(block)
+    
+    return blocks
 
 
 class ResNet(network.DeepNetwork):
@@ -63,7 +76,9 @@ class ResNet(network.DeepNetwork):
 
         Hint: you are storing all layers/blocks sequentially in self.layers and there are NO skip connections acrossblocks ;)
         '''
-        pass
+        for layer in self.layers:
+            x = layer(x)
+        return x
 
     def summary(self):
         '''Custom toString method for ResNets'''
@@ -113,7 +128,32 @@ class ResNet8(ResNet):
         - The only requirement on your variable names is that you MUST name your output layer `self.output_layer`.
         - Use helpful names for your layers and variables. You will have to live with them!
         '''
-        pass
+        super().__init__(input_feats_shape, reg)
+
+        self.layers = []
+
+        # Conv layer: 3x3 kernel size. ReLU activation. He initialization (always!). Uses batch norm.
+        Conv2D_1 = Conv2D(name='Conv2D_1', units=filters, kernel_size=(3, 3),
+                          strides=1, activation='relu', prev_layer_or_block=None,
+                          wt_init='he', do_batch_norm=True)
+        self.layers.append(Conv2D_1)
+        
+        # ResidualBlocks: 1st block has stride of 1, the others have stride 2.
+        ResidualBlock_1 = ResidualBlock(blockname='ResidualBlock_1', units=block_units[0],
+                                        prev_layer_or_block=Conv2D_1, strides=1)
+        ResidualBlock_2 = ResidualBlock(blockname='ResidualBlock_2', units=block_units[1],
+                                prev_layer_or_block=ResidualBlock_1, strides=2)
+        ResidualBlock_3 = ResidualBlock(blockname='ResidualBlock_3', units=block_units[2],
+                                prev_layer_or_block=ResidualBlock_2, strides=2)
+        self.layers.extend([ResidualBlock_1, ResidualBlock_2, ResidualBlock_3])
+        
+        # GlobalAveragePooling2D
+        GlobalAveragePool2D = GlobalAveragePooling2D(name='GlobalAveragePool2D', prev_layer_or_block=ResidualBlock_3)
+        self.layers.append(GlobalAveragePool2D)
+
+        self.output_layer = Dense(name='Output', units=C, activation='softmax', prev_layer_or_block=GlobalAveragePool2D,
+                                  wt_init='he')
+        self.layers.append(self.output_layer)
 
 
 class ResNet18(ResNet):
