@@ -45,11 +45,11 @@ def stack_residualblocks(stackname, units, num_blocks, prev_layer_or_block, firs
     blocks = []
     for i in range(num_blocks):
         block_name = f"{stackname}/block_{i + 1}"
-        stride = first_block_stride if i == 0 else 1
+        strides = first_block_stride if i == 0 else 1
         input_block = prev_layer_or_block if i == 0 else blocks[-1]
 
         if block_type == 'residual':
-            block = ResidualBlock(block_name, units=units, stride=stride, prev_layer=input_block)
+            block = ResidualBlock(block_name, units=units, strides=strides, prev_layer_or_block=input_block)
         else:
             raise ValueError(f"Unsupported block_type: {block_type}")
 
