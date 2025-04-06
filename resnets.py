@@ -191,4 +191,41 @@ class ResNet18(ResNet):
         3. Remember that although Residual Blocks have parallel branches, the macro-level ResNet layers/blocks
         are arranged sequentially.
         '''
-        pass
+        super().__init__(input_feats_shape, reg)
+
+        self.layers = []
+
+        # Initial Conv layer
+        conv = Conv2D(name='Conv2D_1', units=filters, kernel_size=(3, 3), strides=1,
+                      activation='relu', prev_layer_or_block=None, wt_init='he',
+                      do_batch_norm=True)
+        self.layers.append(conv)
+
+        # Stack 1: 2 blocks with 64 units, stride=1
+        stack1 = stack_residualblocks('stack_1', units=block_units[0], num_blocks=2,
+                                      prev_layer_or_block=conv, first_block_stride=1)
+        self.layers.extend(stack1)
+
+        # Stack 2: 2 blocks with 128 units, first block stride=2
+        stack2 = stack_residualblocks('stack_2', units=block_units[1], num_blocks=2,
+                                      prev_layer_or_block=stack1[-1], first_block_stride=2)
+        self.layers.extend(stack2)
+
+        # Stack 3: 2 blocks with 256 units, first block stride=2
+        stack3 = stack_residualblocks('stack_3', units=block_units[2], num_blocks=2,
+                                      prev_layer_or_block=stack2[-1], first_block_stride=2)
+        self.layers.extend(stack3)
+
+        # Stack 4: 2 blocks with 512 units, first block stride=2
+        stack4 = stack_residualblocks('stack_4', units=block_units[3], num_blocks=2,
+                                      prev_layer_or_block=stack3[-1], first_block_stride=2)
+        self.layers.extend(stack4)
+
+        # GlobalAveragePooling2D
+        gap = GlobalAveragePooling2D(name='GlobalAveragePool2D', prev_layer_or_block=stack4[-1])
+        self.layers.append(gap)
+
+        # Final Dense output layer
+        self.output_layer = Dense(name='Output', units=C, activation='softmax',
+                                  prev_layer_or_block=gap, wt_init='he')
+        self.layers.append(self.output_layer)
