@@ -55,9 +55,9 @@ class Conv2D1x1(layers.Conv2D):
 
         NOTE: This is the same as the Conv2D method except for the 2D shape of the weights.
         '''
-        N, I_y, I_x, n_chans = input_shape
-        self.wts = tf.Variable(tf.random.normal([n_chans, self.units], stddev=self.get_kaiming_gain(
-        ) / tf.sqrt(float(self.kernel_size[0] * self.kernel_size[1] * n_chans))))
+        _, _, _, n_chans = input_shape
+        stdev = self.get_kaiming_gain() / tf.sqrt(float(n_chans))
+        self.wts = tf.Variable(tf.random.normal([n_chans, self.units], stddev=stdev))
         self.b = tf.Variable(tf.zeros([self.units]))
 
     def compute_net_input(self, x):
