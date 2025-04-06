@@ -51,8 +51,6 @@ def load_dataset(name):
         classnames_file = 'data/mnist.txt'
     elif name.lower() == 'cifar100':
         (x, y), (x_test, y_test) = tf.keras.datasets.cifar100.load_data()
-        x = np.expand_dims(x, axis=-1)
-        x_test = np.expand_dims(x_test, axis=-1)
         classnames_file = 'data/cifar100.txt'
     else:
         raise ValueError("Supported datasets: 'cifar10', 'mnist'.")
