@@ -143,7 +143,10 @@ class DeepNetwork:
         TODO: Starting with the output layer, traverse the net backward, calling the appropriate method to
         initialize the batch norm parameters in each network layer. Model this process around the summary method.
         '''
-        pass
+        layer = self.output_layer
+        while layer is not None:
+            layer.init_batchnorm_params()
+            layer = layer.get_prev_layer_or_block()
 
     def get_all_params(self, wts_only=False):
         '''Traverses the network backward from the output layer to compile a list of all trainable network paramters.
@@ -454,7 +457,7 @@ class DeepNetwork:
 
                 recent_val_losses, stop_training = self.early_stopping(
                     recent_val_losses, val_loss, patience)
-                
+
                 if len(recent_lr_losses) < lr_patience:
                     recent_lr_losses.append(val_loss)
                 else:
