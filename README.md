@@ -1,2 +1,2 @@
-# DeepNeuralNetworks
-Deep learning project training deep neural networks for CIFAR-10 classification using GPUs on a cloud server. Implements and evaluates VGG models while developing a deep learning library for ongoing expansion.
+# 🧠 DeepNeuralLib
+Implements, trains, and evaluates deep convolutional neural networks—including VGG, ResNet, and InceptionNet—on CIFAR-10 and CIFAR-100 using TensorFlow’s low-level API. Built for modularity, extensibility, and performance on cloud GPUs.
