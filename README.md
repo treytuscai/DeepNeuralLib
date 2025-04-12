@@ -1,2 +1,2 @@
-# DeepNeuralNetworks
-Deep learning project training deep neural networks for CIFAR-10 classification using GPUs on a cloud server. Implements and evaluates VGG models while developing a deep learning library for ongoing expansion.
+# 🧠 DeepNeuralLib – CS 444 Projects
+A deep learning library developed for Colby College's CS444. Implements, trains, and evaluates deep CNNs including VGG, ResNet, and InceptionNet on CIFAR-10 and CIFAR-100 datasets using TensorFlow and cloud GPU compute. Modular, extensible, and performance-focused.
